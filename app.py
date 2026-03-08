@@ -7,6 +7,9 @@ st.set_page_config(
     page_title="Pyspace",
     layout="wide"
 )
+google_login()         # ← checks ?code= FIRST before anything
+# if st.session_state.get("logged_in"):
+#     student_dashboard()
 # create resume folder
 if not os.path.exists("user_resumes"):
     os.makedirs("user_resumes")

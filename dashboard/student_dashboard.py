@@ -2,7 +2,7 @@ import os
 import streamlit as st
 from datetime import date
 
-from auth.google_login import logout_user
+from auth.login import logout_user
 from interview.interview_engine import interview_flow
 from database.db import get_user_interviews
 from utils.resume_parser import extract_resume_text
