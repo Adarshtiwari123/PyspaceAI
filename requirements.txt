@@ -1,0 +1,54 @@
+# ─────────────────────────────────────────────
+# PYSPACE — Requirements
+# Install: pip install -r requirements.txt
+# ─────────────────────────────────────────────
+
+# Core UI
+streamlit>=1.32.0
+
+# AI / OpenAI
+openai>=1.12.0               # GPT-4o-mini + Whisper STT
+
+# Google OAuth
+authlib>=1.3.0
+requests>=2.31.0
+
+# Database
+sqlalchemy>=2.0.0
+psycopg2-binary>=2.9.9
+
+# Resume Parsing
+pymupdf>=1.23.0              # fitz — PDF text extraction
+
+# Text to Speech
+gtts>=2.5.0                  # LISA voice output
+
+# PDF Report Generation
+reportlab>=4.1.0
+
+# Environment Variables
+python-dotenv>=1.0.0
+
+# Data
+pandas>=2.0.0
+
+# streamlit
+# google-genai
+# sqlalchemy
+# python-dotenv
+# speechrecognition
+# pydub
+# pyttsx3
+# bcrypt
+# reportlab
+# authlib
+# requests
+# streamlit
+# google-generativeai
+# psycopg2-binary
+# streamlit-authenticator
+# gtts
+# pandas
+# fpdf
+# pdfplumber
+# docx

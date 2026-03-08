@@ -1,0 +1,157 @@
+#import os
+#from openai import OpenAI
+#from dotenv import load_dotenv
+
+#load_dotenv()
+
+#OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+
+# if not OPENAI_API_KEY:
+#     raise ValueError("OPENAI_API_KEY not found in .env")
+
+# client = OpenAI(api_key=OPENAI_API_KEY)
+
+# MODEL = "gpt-4o-mini"
+
+
+# def generate_question(level, resume, previous_answer=None):
+
+#     prompt = f"""
+# You are LISA, a professional AI technical interviewer.
+
+# Your task is to ask ONE interview question.
+
+# Rules:
+# - Difficulty: {level}
+# - Question should relate to the candidate's resume
+# - If previous answer is weak → ask easier follow-up
+# - If strong → ask deeper question
+# - Only return the question text
+
+# Candidate Resume:
+# {resume}
+
+# Previous Answer:
+# {previous_answer}
+# """
+
+#     response = client.chat.completions.create(
+#         model=MODEL,
+#         messages=[
+#             {"role": "system", "content": "You are LISA, a professional AI interviewer."},
+#             {"role": "user", "content": prompt}
+#         ],
+#         temperature=0.7
+#     )
+
+#     question = response.choices[0].message.content.strip()
+
+#     return question
+
+
+
+
+
+
+
+
+
+
+
+
+# from google import genai
+# import os
+# from dotenv import load_dotenv
+
+# load_dotenv()
+
+# GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+
+# if not GEMINI_API_KEY:
+#     raise ValueError("❌ GEMINI_API_KEY not found in .env")
+
+# client = genai.Client(api_key=GEMINI_API_KEY)
+
+# MODEL = "gemini-2.0-flash"
+
+
+# def generate_question(level, resume, previous_answer=None):
+
+#     prompt = f"""
+# You are LISA, a professional AI technical interviewer.
+
+# Your task is to ask ONE interview question.
+
+# Rules:
+# - Difficulty: {level}
+# - Question should relate to the candidate's resume
+# - If previous answer is weak → ask easier follow-up
+# - If strong → ask deeper question
+# - Only return the question text
+
+# Candidate Resume:
+# {resume}
+
+# Previous Answer:
+# {previous_answer}
+# """
+
+#     response = client.models.generate_content(
+#         model=MODEL,
+#         contents=prompt
+#     )
+
+#     question = response.text.strip()
+
+#     return question
+# def generate_question(level, resume):
+
+#     prompt = f"""
+# You are LISA, an AI interviewer.
+
+# Candidate Resume:
+# {resume}
+
+# Ask one {level} level technical interview question based on the resume.
+
+# Return only the question.
+# """
+
+#     response = client.models.generate_content(
+#         model=MODEL,
+#         contents=prompt
+#     )
+
+#     return response.text.strip()
+
+
+# from google import genai
+# import os
+# from dotenv import load_dotenv
+
+# load_dotenv()
+
+# GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+
+# if not GEMINI_API_KEY:
+#     raise ValueError("❌ GEMINI_API_KEY not found in .env")
+
+# client = genai.Client(api_key=GEMINI_API_KEY)
+
+# MODEL = "gemini-2.0-flash"  # updated model
+
+# def generate_question(level, previous_answer=None):
+#     prompt = f"""
+#     You are LISA, an AI interviewer.
+
+#     Ask a {level} level technical interview question.
+#     If previous answer is provided, adapt difficulty accordingly.
+#     Only return the question.
+#     """
+
+#     response = client.models.generate_content(
+#         model=MODEL,
+#         contents=prompt,
+#     )
+
+#     return response.text
