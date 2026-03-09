@@ -1,31 +1,42 @@
-# Core UI
 streamlit>=1.32.0
+openai>=1.12.0
+bcrypt>=4.0.0
+requests>=2.31.0
+sqlalchemy>=2.0.0
+psycopg2-binary>=2.9.9
+pdfplumber>=0.10.0
+pdfminer.six>=20221105
+reportlab>=4.1.0
+python-dotenv>=1.0.0
+pandas>=2.0.0
+# Core UI
+#streamlit>=1.32.0
 
 # AI / OpenAI
-openai>=1.12.0
+#openai>=1.12.0
 
 # Auth
-bcrypt>=4.0.0
+#bcrypt>=4.0.0
 requests>=2.31.0
 
 # Database
-sqlalchemy>=2.0.0
-psycopg2-binary>=2.9.9
+#sqlalchemy>=2.0.0
+#psycopg2-binary>=2.9.9
 
 # Resume Parsing
-pymupdf>=1.23.0
+#pymupdf>=1.23.0
 
 # Text to Speech
-gtts>=2.5.0
+#gtts>=2.5.0
 
 # PDF Report
-reportlab>=4.1.0
+#reportlab>=4.1.0
 
 # Environment
-python-dotenv>=1.0.0
+#python-dotenv>=1.0.0
 
 # Data
-pandas>=2.0.0
+#pandas>=2.0.0
 
 # # ─────────────────────────────────────────────
 # # PYSPACE — Requirements
@@ -80,4 +91,5 @@ pandas>=2.0.0
 # # pandas
 # # fpdf
 # # pdfplumber
+
 # # docx
