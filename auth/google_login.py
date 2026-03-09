@@ -1,10 +1,7 @@
 import streamlit as st
-from authlib.integrations.requests_client import OAuth2Session
-from dotenv import load_dotenv
-from database.db import save_user
+import requests
 from config import GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, REDIRECT_URI
-
-load_dotenv()
+from database.db import save_user
 
 # ─────────────────────────────────────────────
 # GOOGLE OAUTH ENDPOINTS
@@ -14,51 +11,116 @@ TOKEN_URL              = "https://oauth2.googleapis.com/token"
 USER_INFO_URL          = "https://www.googleapis.com/oauth2/v2/userinfo"
 
 
-# ─────────────────────────────────────────────
-# LOGOUT
-# ─────────────────────────────────────────────
 def logout_user():
     st.session_state.clear()
     st.rerun()
 
 
-# ─────────────────────────────────────────────
-# GOOGLE LOGIN
-# ─────────────────────────────────────────────
+def get_authorization_url() -> str:
+    """Build Google OAuth URL manually — no state, no authlib session."""
+    import urllib.parse
+    params = {
+        "client_id":     GOOGLE_CLIENT_ID,
+        "redirect_uri":  REDIRECT_URI,
+        "response_type": "code",
+        "scope":         "openid email profile",
+        "access_type":   "offline",
+        "prompt":        "select_account",
+    }
+    return AUTHORIZATION_BASE_URL + "?" + urllib.parse.urlencode(params)
+
+
+def exchange_code_for_token(code: str) -> dict:
+    """Exchange auth code for access token directly via requests."""
+    resp = requests.post(TOKEN_URL, data={
+        "code":          code,
+        "client_id":     GOOGLE_CLIENT_ID,
+        "client_secret": GOOGLE_CLIENT_SECRET,
+        "redirect_uri":  REDIRECT_URI,
+        "grant_type":    "authorization_code",
+    })
+    return resp.json()
+
+
+def get_user_info(access_token: str) -> dict:
+    """Fetch user profile from Google."""
+    resp = requests.get(
+        USER_INFO_URL,
+        headers={"Authorization": f"Bearer {access_token}"}
+    )
+    return resp.json()
+
+
 def google_login():
 
-    # Page heading
+    # Already logged in
+    if st.session_state.get("logged_in"):
+        return
+
+    # ── Check for OAuth callback code in URL ──────────────────────
+    query_params = st.query_params
+
+    if "code" in query_params:
+        code = query_params["code"]
+
+        # Clear code from URL immediately
+        st.query_params.clear()
+
+        try:
+            # Exchange code for token — no state validation needed
+            token_data = exchange_code_for_token(code)
+
+            if "error" in token_data:
+                st.error(f"Login failed: {token_data.get('error_description', token_data['error'])}")
+                return
+
+            access_token = token_data.get("access_token")
+            if not access_token:
+                st.error("Could not retrieve access token. Please try again.")
+                return
+
+            # Get user info
+            user_info = get_user_info(access_token)
+
+            if "email" not in user_info:
+                st.error("Could not retrieve account info. Please try again.")
+                return
+
+            # Save user to DB
+            save_user(
+                name    = user_info.get("name", "User"),
+                email   = user_info["email"],
+                picture = user_info.get("picture", "")
+            )
+
+            # Store in session
+            st.session_state["logged_in"]    = True
+            st.session_state["user_name"]    = user_info.get("name", "User")
+            st.session_state["user_email"]   = user_info["email"]
+            st.session_state["user_picture"] = user_info.get("picture", "")
+
+            st.rerun()
+
+        except Exception as e:
+            st.error("Login failed. Please try again.")
+            print(f"[GoogleLogin] Error: {e}")
+        return
+
+    # ── Show login page ───────────────────────────────────────────
     st.markdown("""
         <div style="text-align:center; padding: 60px 0 20px 0;">
-            <h1>🚀 Pyspace AI Interview</h1>
+            <h1>Pyspace AI Interview</h1>
             <p style="color: gray; font-size: 16px;">
                 Practice real interviews with LISA — your AI interviewer
             </p>
         </div>
     """, unsafe_allow_html=True)
 
-    # Already logged in — nothing to do
-    if st.session_state.get("logged_in"):
-        return
+    auth_url = get_authorization_url()
 
-    # ── Build OAuth session ──────────────────
-    oauth = OAuth2Session(
-        GOOGLE_CLIENT_ID,
-        GOOGLE_CLIENT_SECRET,
-        scope        = "openid email profile",
-        redirect_uri = REDIRECT_URI
-    )
-
-    authorization_url, state = oauth.create_authorization_url(
-        AUTHORIZATION_BASE_URL,
-        access_type = "offline",
-        prompt      = "select_account"
-    )
-
-    # ── Login button ─────────────────────────
     st.markdown(f"""
         <div style="text-align:center; margin-top: 20px;">
-            <a href="{authorization_url}" target="_self">
+            <a href="{auth_url}" target="_self">
                 <button style="
                     background-color: #4285F4;
                     color: white;
@@ -70,58 +132,11 @@ def google_login():
                     cursor: pointer;
                     box-shadow: 0 2px 8px rgba(66,133,244,0.4);
                 ">
-                    🔐 Sign in with Google
+                    Sign in with Google
                 </button>
             </a>
         </div>
     """, unsafe_allow_html=True)
-
-    # ── Handle OAuth callback ────────────────
-    query_params = st.query_params
-
-    if "code" not in query_params:
-        return
-
-    try:
-        code = query_params["code"]
-
-        # Clear code from URL immediately so it doesn't re-run
-        st.query_params.clear()
-
-        # Exchange code for token
-        token = oauth.fetch_token(
-            TOKEN_URL,
-            code         = code,
-            redirect_uri = REDIRECT_URI
-        )
-
-        # Fetch user info
-        resp      = oauth.get(USER_INFO_URL)
-        user_info = resp.json()
-
-        # Validate required fields
-        if "email" not in user_info:
-            st.error("Could not retrieve Google account info. Please try again.")
-            return
-
-        # Save user to Supabase (skips if already exists)
-        save_user(
-            name    = user_info.get("name", "User"),
-            email   = user_info["email"],
-            picture = user_info.get("picture", "")
-        )
-
-        # Store in session state
-        st.session_state["logged_in"]     = True
-        st.session_state["user_name"]     = user_info.get("name", "User")
-        st.session_state["user_email"]    = user_info["email"]
-        st.session_state["user_picture"]  = user_info.get("picture", "")
-
-        st.rerun()
-
-    except Exception as e:
-        st.error(f"Login failed. Please try again.")
-        print(f"[GoogleLogin] OAuth error: {e}")
 
 # import streamlit as st
 # from authlib.integrations.requests_client import OAuth2Session
@@ -248,134 +263,259 @@ def google_login():
 #         st.error(f"Login failed. Please try again.")
 #         print(f"[GoogleLogin] OAuth error: {e}")
 
-
-
 # # import streamlit as st
 # # from authlib.integrations.requests_client import OAuth2Session
-# # import os
 # # from dotenv import load_dotenv
 # # from database.db import save_user
+# # from config import GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, REDIRECT_URI
 
 # # load_dotenv()
 
-# # CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
-# # CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
-
+# # # ─────────────────────────────────────────────
+# # # GOOGLE OAUTH ENDPOINTS
+# # # ─────────────────────────────────────────────
 # # AUTHORIZATION_BASE_URL = "https://accounts.google.com/o/oauth2/auth"
-# # TOKEN_URL = "https://oauth2.googleapis.com/token"
-# # USER_INFO_URL = "https://www.googleapis.com/oauth2/v2/userinfo"
-
-# # REDIRECT_URI = "http://localhost:8501"
+# # TOKEN_URL              = "https://oauth2.googleapis.com/token"
+# # USER_INFO_URL          = "https://www.googleapis.com/oauth2/v2/userinfo"
 
 
-# # # -----------------------------
+# # # ─────────────────────────────────────────────
 # # # LOGOUT
-# # # -----------------------------
+# # # ─────────────────────────────────────────────
 # # def logout_user():
 # #     st.session_state.clear()
 # #     st.rerun()
 
 
-# # # -----------------------------
+# # # ─────────────────────────────────────────────
 # # # GOOGLE LOGIN
-# # # -----------------------------
+# # # ─────────────────────────────────────────────
 # # def google_login():
 
+# #     # Page heading
 # #     st.markdown("""
-# #         <div style="text-align:center;">
+# #         <div style="text-align:center; padding: 60px 0 20px 0;">
 # #             <h1>🚀 Pyspace AI Interview</h1>
-# #             <p>Login securely with Google</p>
+# #             <p style="color: gray; font-size: 16px;">
+# #                 Practice real interviews with LISA — your AI interviewer
+# #             </p>
 # #         </div>
 # #     """, unsafe_allow_html=True)
 
-# #     # If already logged in
+# #     # Already logged in — nothing to do
 # #     if st.session_state.get("logged_in"):
 # #         return
 
+# #     # ── Build OAuth session ──────────────────
 # #     oauth = OAuth2Session(
-# #         CLIENT_ID,
-# #         CLIENT_SECRET,
-# #         scope="openid email profile",
-# #         redirect_uri=REDIRECT_URI
+# #         GOOGLE_CLIENT_ID,
+# #         GOOGLE_CLIENT_SECRET,
+# #         scope        = "openid email profile",
+# #         redirect_uri = REDIRECT_URI
 # #     )
 
 # #     authorization_url, state = oauth.create_authorization_url(
 # #         AUTHORIZATION_BASE_URL,
-# #         access_type="offline",
-# #         prompt="select_account"
+# #         access_type = "offline",
+# #         prompt      = "select_account"
 # #     )
 
+# #     # ── Login button ─────────────────────────
 # #     st.markdown(f"""
-# #         <div style="text-align:center;">
-# #             <a href="{authorization_url}">
+# #         <div style="text-align:center; margin-top: 20px;">
+# #             <a href="{authorization_url}" target="_self">
 # #                 <button style="
-# #                     background-color:#4285F4;
-# #                     color:white;
-# #                     padding:12px 24px;
-# #                     border:none;
-# #                     border-radius:8px;
-# #                     font-size:16px;
-# #                     cursor:pointer;">
-# #                     Sign in with Google
+# #                     background-color: #4285F4;
+# #                     color: white;
+# #                     padding: 12px 32px;
+# #                     border: none;
+# #                     border-radius: 8px;
+# #                     font-size: 16px;
+# #                     font-weight: 600;
+# #                     cursor: pointer;
+# #                     box-shadow: 0 2px 8px rgba(66,133,244,0.4);
+# #                 ">
+# #                     🔐 Sign in with Google
 # #                 </button>
 # #             </a>
 # #         </div>
 # #     """, unsafe_allow_html=True)
+
+# #     # ── Handle OAuth callback ────────────────
 # #     query_params = st.query_params
 
-# #     if "code" in query_params:
+# #     if "code" not in query_params:
+# #         return
 
-# #      code = query_params.get("code")
+# #     try:
+# #         code = query_params["code"]
 
-# #     # remove code so it doesn't run again
-# #      st.query_params.clear()
+# #         # Clear code from URL immediately so it doesn't re-run
+# #         st.query_params.clear()
 
-# #      token = oauth.fetch_token(
-# #         TOKEN_URL,
-# #         code=code
-# #      )
+# #         # Exchange code for token
+# #         token = oauth.fetch_token(
+# #             TOKEN_URL,
+# #             code         = code,
+# #             redirect_uri = REDIRECT_URI
+# #         )
 
-# #      resp = oauth.get(USER_INFO_URL)
-# #      user_info = resp.json()
+# #         # Fetch user info
+# #         resp      = oauth.get(USER_INFO_URL)
+# #         user_info = resp.json()
 
-# #      save_user(
-# #         user_info["name"],
-# #         user_info["email"],
-# #         user_info["picture"]
-# #      )
+# #         # Validate required fields
+# #         if "email" not in user_info:
+# #             st.error("Could not retrieve Google account info. Please try again.")
+# #             return
 
-# #      st.session_state["logged_in"] = True
-# #      st.session_state["user_name"] = user_info["name"]
-# #      st.session_state["user_email"] = user_info["email"]
-# #      st.session_state["user_picture"] = user_info["picture"]
+# #         # Save user to Supabase (skips if already exists)
+# #         save_user(
+# #             name    = user_info.get("name", "User"),
+# #             email   = user_info["email"],
+# #             picture = user_info.get("picture", "")
+# #         )
 
-# #      st.rerun()
+# #         # Store in session state
+# #         st.session_state["logged_in"]     = True
+# #         st.session_state["user_name"]     = user_info.get("name", "User")
+# #         st.session_state["user_email"]    = user_info["email"]
+# #         st.session_state["user_picture"]  = user_info.get("picture", "")
 
-# #     # query_params = st.query_params
+# #         st.rerun()
 
-# #     # if "code" in query_params:
+# #     except Exception as e:
+# #         st.error(f"Login failed. Please try again.")
+# #         print(f"[GoogleLogin] OAuth error: {e}")
 
-# #     #     code = query_params["code"]
 
-# #     #     token = oauth.fetch_token(
-# #     #         TOKEN_URL,
-# #     #         code=code
-# #     #     )
 
-# #     #     resp = oauth.get(USER_INFO_URL)
-# #     #     user_info = resp.json()
+# # # import streamlit as st
+# # # from authlib.integrations.requests_client import OAuth2Session
+# # # import os
+# # # from dotenv import load_dotenv
+# # # from database.db import save_user
 
-# #     #     # Save user in database
-# #     #     save_user(
-# #     #         user_info["name"],
-# #     #         user_info["email"],
-# #     #         user_info["picture"]
-# #     #     )
+# # # load_dotenv()
 
-# #     #     # Save session
-# #     #     st.session_state["logged_in"] = True
-# #     #     st.session_state["user_name"] = user_info["name"]
-# #     #     st.session_state["user_email"] = user_info["email"]
-# #     #     st.session_state["user_picture"] = user_info["picture"]
+# # # CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
+# # # CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
 
-# #     #     st.rerun()
+# # # AUTHORIZATION_BASE_URL = "https://accounts.google.com/o/oauth2/auth"
+# # # TOKEN_URL = "https://oauth2.googleapis.com/token"
+# # # USER_INFO_URL = "https://www.googleapis.com/oauth2/v2/userinfo"
+
+# # # REDIRECT_URI = "http://localhost:8501"
+
+
+# # # # -----------------------------
+# # # # LOGOUT
+# # # # -----------------------------
+# # # def logout_user():
+# # #     st.session_state.clear()
+# # #     st.rerun()
+
+
+# # # # -----------------------------
+# # # # GOOGLE LOGIN
+# # # # -----------------------------
+# # # def google_login():
+
+# # #     st.markdown("""
+# # #         <div style="text-align:center;">
+# # #             <h1>🚀 Pyspace AI Interview</h1>
+# # #             <p>Login securely with Google</p>
+# # #         </div>
+# # #     """, unsafe_allow_html=True)
+
+# # #     # If already logged in
+# # #     if st.session_state.get("logged_in"):
+# # #         return
+
+# # #     oauth = OAuth2Session(
+# # #         CLIENT_ID,
+# # #         CLIENT_SECRET,
+# # #         scope="openid email profile",
+# # #         redirect_uri=REDIRECT_URI
+# # #     )
+
+# # #     authorization_url, state = oauth.create_authorization_url(
+# # #         AUTHORIZATION_BASE_URL,
+# # #         access_type="offline",
+# # #         prompt="select_account"
+# # #     )
+
+# # #     st.markdown(f"""
+# # #         <div style="text-align:center;">
+# # #             <a href="{authorization_url}">
+# # #                 <button style="
+# # #                     background-color:#4285F4;
+# # #                     color:white;
+# # #                     padding:12px 24px;
+# # #                     border:none;
+# # #                     border-radius:8px;
+# # #                     font-size:16px;
+# # #                     cursor:pointer;">
+# # #                     Sign in with Google
+# # #                 </button>
+# # #             </a>
+# # #         </div>
+# # #     """, unsafe_allow_html=True)
+# # #     query_params = st.query_params
+
+# # #     if "code" in query_params:
+
+# # #      code = query_params.get("code")
+
+# # #     # remove code so it doesn't run again
+# # #      st.query_params.clear()
+
+# # #      token = oauth.fetch_token(
+# # #         TOKEN_URL,
+# # #         code=code
+# # #      )
+
+# # #      resp = oauth.get(USER_INFO_URL)
+# # #      user_info = resp.json()
+
+# # #      save_user(
+# # #         user_info["name"],
+# # #         user_info["email"],
+# # #         user_info["picture"]
+# # #      )
+
+# # #      st.session_state["logged_in"] = True
+# # #      st.session_state["user_name"] = user_info["name"]
+# # #      st.session_state["user_email"] = user_info["email"]
+# # #      st.session_state["user_picture"] = user_info["picture"]
+
+# # #      st.rerun()
+
+# # #     # query_params = st.query_params
+
+# # #     # if "code" in query_params:
+
+# # #     #     code = query_params["code"]
+
+# # #     #     token = oauth.fetch_token(
+# # #     #         TOKEN_URL,
+# # #     #         code=code
+# # #     #     )
+
+# # #     #     resp = oauth.get(USER_INFO_URL)
+# # #     #     user_info = resp.json()
+
+# # #     #     # Save user in database
+# # #     #     save_user(
+# # #     #         user_info["name"],
+# # #     #         user_info["email"],
+# # #     #         user_info["picture"]
+# # #     #     )
+
+# # #     #     # Save session
+# # #     #     st.session_state["logged_in"] = True
+# # #     #     st.session_state["user_name"] = user_info["name"]
+# # #     #     st.session_state["user_email"] = user_info["email"]
+# # #     #     st.session_state["user_picture"] = user_info["picture"]
+
+# # #     #     st.rerun()
