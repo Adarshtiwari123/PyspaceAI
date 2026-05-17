@@ -312,17 +312,8 @@ def show_results():
 
     # ── Hero ──────────────────────────────────
     st.markdown(f"""
-<<<<<<< HEAD
-    <div style="background:linear-gradient(135deg,#0f172a,#1e1b4b);
-                border:1px solid #312e81;border-radius:20px;
-
     <div style="background:linear-gradient(135deg,#141824,#1a1f2e);
                 border:1px solid #2d3548;border-radius:16px;
-
-=======
-    <div style="background:linear-gradient(135deg,#141824,#1a1f2e);
-                border:1px solid #2d3548;border-radius:16px;
->>>>>>> 1cf65828 (remove indenation)
                 padding:36px;text-align:center;margin-bottom:24px;">
         <div style="font-size:12px;color:#64748b;letter-spacing:2px;
                     text-transform:uppercase;margin-bottom:10px;">
@@ -377,21 +368,9 @@ def show_results():
 
     # ONE single st.markdown call — open div, all bars, close div together
     st.markdown(f"""
-<<<<<<< HEAD
-
-    <div style="background:#111827;border:1px solid #1e2d47;
-                border-radius:16px;padding:24px;margin-bottom:20px;">
-        <div style="font-size:12px;font-weight:700;color:#00d4ff;
-
     <div style="background:#1a1f2e;border:1px solid #2d3548;
                 border-radius:16px;padding:24px;margin-bottom:20px;">
         <div style="font-size:12px;font-weight:700;color:#10b981;
-
-=======
-    <div style="background:#1a1f2e;border:1px solid #2d3548;
-                border-radius:16px;padding:24px;margin-bottom:20px;">
-        <div style="font-size:12px;font-weight:700;color:#10b981;
->>>>>>> 1cf65828 (remove indenation)
                     letter-spacing:1.5px;text-transform:uppercase;
                     margin-bottom:20px;">Skill Breakdown</div>
         {skill_bar_html("Technical Knowledge",   tech)}
@@ -807,15 +786,7 @@ def interview_flow():
         else:
             st.markdown(f"""
             <div style="
-<<<<<<< HEAD
-
-                background:#1a0a0a;border:1px solid #7f1d1d;
-
                 background:#1f1215;border:1px solid #7f1d1d;
-
-=======
-                background:#1f1215;border:1px solid #7f1d1d;
->>>>>>> 1cf65828 (remove indenation)
                 border-radius:10px;padding:12px 16px;margin:8px 0;
                 color:#fca5a5;font-size:13px;">
                 ⚠️ Could not transcribe: <b>{debug_msg}</b><br>

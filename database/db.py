@@ -16,13 +16,7 @@ def _get_db_url():
     except Exception:
         pass
     return os.getenv("DATABASE_URL")
-<<<<<<< HEAD
 
-DATABASE_URL = _get_db_url()
-if not DATABASE_URL:
-    raise ValueError("DATABASE_URL not found in secrets or .env")
-=======
->>>>>>> 4d0e189f (first update)
 
 DATABASE_URL = _get_db_url()
 connection_pool = None

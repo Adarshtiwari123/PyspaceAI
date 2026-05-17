@@ -104,17 +104,17 @@ def render_interview_header(title: str, q_num: int, total_q: int,
             <script>
                 var timeLeft = {remaining};
                 var timerSpan = document.getElementById('countdown_timer');
-                var interval = setInterval(function() {
-                    if (timeLeft <= 0) {
+                var interval = setInterval(function() {{
+                    if (timeLeft <= 0) {{
                         clearInterval(interval);
                         timerSpan.innerHTML = "00:00";
-                    } else {
+                    }} else {{
                         timeLeft--;
                         var minutes = Math.floor(timeLeft / 60);
                         var seconds = timeLeft % 60;
                         timerSpan.innerHTML = (minutes < 10 ? "0" : "") + minutes + ":" + (seconds < 10 ? "0" : "") + seconds;
-                    }
-                }, 1000);
+                    }}
+                }}, 1000);
             </script>
             """, unsafe_allow_html=True)
         with col3:
