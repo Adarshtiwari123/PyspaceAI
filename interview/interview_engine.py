@@ -597,30 +597,7 @@ def interview_flow():
             st.caption(st.session_state.get("question_time", ""))
 
         # User bubble — dark card matching LISA style
-        st.markdown(f"""
-        <div style="
-            background: #0f1f3d;
-            border: 1px solid #1e3a6e;
-            border-radius: 16px 0 16px 16px;
-            padding: 16px 20px;
-            max-width: 76%;
-            margin-left: auto;
-            margin-right: 0;
-            margin-bottom: 12px;
-            box-shadow: 0 0 20px rgba(37,99,235,0.08);
-        ">
-            <span style="font-size:11px;font-weight:700;color:#60a5fa;">
-                {st.session_state.get("user_name", "You")}
-            </span>
-            <span style="font-size:11px;color:#1e3a6e;margin-left:8px;">
-                {qa.get("timestamp", "")}
-            </span>
-            <div style="color:#dbeafe;font-size:15px;
-                        line-height:1.7;margin-top:8px;">
-                {qa["answer"]}
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+
 
 
     # ── GENERATE CURRENT QUESTION ─────────────────────────────────
