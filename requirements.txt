@@ -1,7 +1,4 @@
-<<<<<<< HEAD
-=======
 # Core UI
->>>>>>> 4d0e189f (first update)
 streamlit>=1.32.0
 openai>=1.12.0
 bcrypt>=4.0.0
@@ -17,17 +14,14 @@ pandas>=2.0.0
 #streamlit>=1.32.0
 
 # AI / OpenAI
-<<<<<<< HEAD
 #openai>=1.12.0
 
 # Auth
 #bcrypt>=4.0.0
-=======
 openai>=1.12.0
 
 # Auth
 bcrypt>=4.0.0
->>>>>>> 4d0e189f (first update)
 requests>=2.31.0
 
 # Database
@@ -35,7 +29,6 @@ requests>=2.31.0
 #psycopg2-binary>=2.9.9
 
 # Resume Parsing
-<<<<<<< HEAD
 #pymupdf>=1.23.0
 
 # Text to Speech
@@ -46,7 +39,6 @@ requests>=2.31.0
 
 # Environment
 #python-dotenv>=1.0.0
-=======
 pymupdf>=1.23.0
 
 # Text to Speech
@@ -57,7 +49,6 @@ reportlab>=4.1.0
 
 # Environment
 python-dotenv>=1.0.0
->>>>>>> 4d0e189f (first update)
 
 # Data
 #pandas>=2.0.0
@@ -115,7 +106,7 @@ python-dotenv>=1.0.0
 # # pandas
 # # fpdf
 # # pdfplumber
-<<<<<<< HEAD
+
 
 # # docx
 =======
