@@ -311,13 +311,12 @@ def show_results():
 
     # ── Hero ──────────────────────────────────
     st.markdown(f"""
-<<<<<<< HEAD
     <div style="background:linear-gradient(135deg,#0f172a,#1e1b4b);
                 border:1px solid #312e81;border-radius:20px;
-=======
+
     <div style="background:linear-gradient(135deg,#141824,#1a1f2e);
                 border:1px solid #2d3548;border-radius:16px;
->>>>>>> 4d0e189f (first update)
+
                 padding:36px;text-align:center;margin-bottom:24px;">
         <div style="font-size:12px;color:#64748b;letter-spacing:2px;
                     text-transform:uppercase;margin-bottom:10px;">
@@ -372,15 +371,15 @@ def show_results():
 
     # ONE single st.markdown call — open div, all bars, close div together
     st.markdown(f"""
-<<<<<<< HEAD
+
     <div style="background:#111827;border:1px solid #1e2d47;
                 border-radius:16px;padding:24px;margin-bottom:20px;">
         <div style="font-size:12px;font-weight:700;color:#00d4ff;
-=======
+
     <div style="background:#1a1f2e;border:1px solid #2d3548;
                 border-radius:16px;padding:24px;margin-bottom:20px;">
         <div style="font-size:12px;font-weight:700;color:#10b981;
->>>>>>> 4d0e189f (first update)
+
                     letter-spacing:1.5px;text-transform:uppercase;
                     margin-bottom:20px;">Skill Breakdown</div>
         {skill_bar_html("Technical Knowledge",   tech)}
@@ -422,26 +421,26 @@ def show_results():
         topics = [t.strip() for t in study.split(",") if t.strip()] or [study]
         rows   = "".join([
             f'<div style="display:flex;align-items:flex-start;gap:12px;'
-<<<<<<< HEAD
+
             f'padding:10px 0;border-bottom:1px solid #1e293b;">'
             f'<span style="color:#00d4ff;font-weight:700;">→</span>'
-=======
+
             f'padding:10px 0;border-bottom:1px solid #2d3548;">'
             f'<span style="color:#10b981;font-weight:700;">→</span>'
->>>>>>> 4d0e189f (first update)
+
             f'<span style="color:#e2e8f0;font-size:14px;">{t}</span></div>'
             for t in topics
         ])
         st.markdown(
-<<<<<<< HEAD
+
             f'<div style="background:#111827;border:1px solid #1e2d47;'
             f'border-radius:16px;padding:20px;margin-bottom:20px;">'
             f'<div style="font-size:12px;font-weight:700;color:#00d4ff;'
-=======
+
             f'<div style="background:#1a1f2e;border:1px solid #2d3548;'
             f'border-radius:16px;padding:20px;margin-bottom:20px;">'
             f'<div style="font-size:12px;font-weight:700;color:#10b981;'
->>>>>>> 4d0e189f (first update)
+
             f'letter-spacing:1.5px;text-transform:uppercase;margin-bottom:4px;">'
             f'Your Personalised Study Plan</div>'
             f'<div style="font-size:12px;color:#374151;margin-bottom:12px;">'
@@ -614,7 +613,7 @@ def interview_flow():
             st.markdown(
                 f'<span style="font-size:11px;font-weight:700;color:#10b981;">'
                 f'LISA &nbsp;•&nbsp; AI Interviewer</span>'
-<<<<<<< HEAD
+
                 f'{stage_badge(qa["level"])}',
                 unsafe_allow_html=True
             )
@@ -754,7 +753,7 @@ def interview_flow():
             from utils.speech_to_text import transcribe_audio_debug
             transcribed, debug_msg = transcribe_audio_debug(audio_input)
 
-=======
+
                 f'{stage_badge(level)}',
                 unsafe_allow_html=True
             )
@@ -816,18 +815,17 @@ def interview_flow():
             from utils.speech_to_text import transcribe_audio_debug
             transcribed, debug_msg = transcribe_audio_debug(audio_input)
 
->>>>>>> 4d0e189f (first update)
         if transcribed and transcribed.strip():
             st.session_state[f"prefill_{total_done}"] = transcribed.strip()
             st.rerun()
         else:
             st.markdown(f"""
             <div style="
-<<<<<<< HEAD
+
                 background:#1a0a0a;border:1px solid #7f1d1d;
-=======
+
                 background:#1f1215;border:1px solid #7f1d1d;
->>>>>>> 4d0e189f (first update)
+
                 border-radius:10px;padding:12px 16px;margin:8px 0;
                 color:#fca5a5;font-size:13px;">
                 ⚠️ Could not transcribe: <b>{debug_msg}</b><br>
@@ -839,11 +837,11 @@ def interview_flow():
 
     # Step 3 — chat_input pinned at bottom
     typed = st.chat_input(
-<<<<<<< HEAD
+
         "Type your answer and press Enter  (or use mic above)",
-=======
+
         "Type your answer or tap the mic to speak...",
->>>>>>> 4d0e189f (first update)
+
         key = f"chat_{total_done}"
     )
     if typed:
