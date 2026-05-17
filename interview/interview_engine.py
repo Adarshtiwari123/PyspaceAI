@@ -590,12 +590,11 @@ def interview_flow():
             st.markdown(
                 f'<span style="font-size:11px;font-weight:700;color:#10b981;">'
                 f'LISA &nbsp;•&nbsp; AI Interviewer</span>'
-
-                f'{stage_badge(qa["level"])}',
+                f'{stage_badge(level)}',
                 unsafe_allow_html=True
             )
-            st.markdown(strip_emojis(qa["question"]))
-            st.caption(qa.get("timestamp", ""))
+            st.markdown(strip_emojis(question))
+            st.caption(st.session_state.get("question_time", ""))
 
         # User bubble — dark card matching LISA style
         st.markdown(f"""
