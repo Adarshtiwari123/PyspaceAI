@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import os
 import streamlit as st
 
@@ -102,4 +101,3 @@ from interview.interview_engine import interview_flow
 
 # Run the interview flow directly
 interview_flow()
->>>>>>> 4d0e189f (first update)
