@@ -198,6 +198,7 @@ def home_page(kpis: dict, user_email: str):
         interview_flow()
         return
 
+<<<<<<< HEAD
     # ── 1 INTERVIEW LIMIT ────────────────────
     if has_used_interview(user_email):
         st.markdown("""
@@ -270,6 +271,9 @@ def home_page(kpis: dict, user_email: str):
                 st.session_state.page = "history"
                 st.rerun()
         return
+=======
+    # Removed interview limit checks
+>>>>>>> 4d0e189f (first update)
 
     # ── Resume already loaded ────────────────
     if st.session_state.get("resume_path") and st.session_state.get("resume_text"):
@@ -306,17 +310,25 @@ def home_page(kpis: dict, user_email: str):
 # ─────────────────────────────────────────────
 def student_dashboard():
 
+<<<<<<< HEAD
     if not st.session_state.get("logged_in"):
         st.error("Please login first.")
         return
 
+=======
+>>>>>>> 4d0e189f (first update)
     if "page" not in st.session_state:
         st.session_state.page = "home"
 
     os.makedirs("user_resumes", exist_ok=True)
 
+<<<<<<< HEAD
     user_email = st.session_state["user_email"]
     interviews = get_user_interviews(user_email)
+=======
+    user_email = st.session_state.get("user_email", "guest@example.com")
+    interviews = []
+>>>>>>> 4d0e189f (first update)
     kpis       = calculate_kpis(interviews)
 
     navbar()

@@ -16,32 +16,41 @@ def _get_db_url():
     except Exception:
         pass
     return os.getenv("DATABASE_URL")
+<<<<<<< HEAD
 
 DATABASE_URL = _get_db_url()
 if not DATABASE_URL:
     raise ValueError("DATABASE_URL not found in secrets or .env")
+=======
+>>>>>>> 4d0e189f (first update)
 
-# ─────────────────────────────────────────────
-# CONNECTION POOL (psycopg2 — for raw queries)
-# ─────────────────────────────────────────────
-connection_pool = psycopg2.pool.SimpleConnectionPool(
-    minconn=1,
-    maxconn=10,
-    dsn=DATABASE_URL
-)
+DATABASE_URL = _get_db_url()
+connection_pool = None
+engine = None
+SessionLocal = None
+
+if DATABASE_URL:
+    try:
+        connection_pool = psycopg2.pool.SimpleConnectionPool(
+            minconn=1,
+            maxconn=10,
+            dsn=DATABASE_URL
+        )
+        engine = create_engine(DATABASE_URL, pool_pre_ping=True)
+        SessionLocal = sessionmaker(bind=engine)
+    except Exception as e:
+        print(f"Warning: Could not connect to database: {e}")
+else:
+    print("Warning: DATABASE_URL not found. Database features will be unavailable.")
 
 def get_connection():
-    return connection_pool.getconn()
+    if connection_pool:
+        return connection_pool.getconn()
+    raise Exception("Database connection pool not initialized.")
 
 def release_connection(conn):
-    connection_pool.putconn(conn)
-
-
-# ─────────────────────────────────────────────
-# SQLALCHEMY (for ORM / create_tables)
-# ─────────────────────────────────────────────
-engine = create_engine(DATABASE_URL, pool_pre_ping=True)
-SessionLocal = sessionmaker(bind=engine)
+    if connection_pool:
+        connection_pool.putconn(conn)
 
 
 # ─────────────────────────────────────────────

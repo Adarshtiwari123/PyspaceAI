@@ -23,6 +23,7 @@ from assets.interview_style import (
     stage_badge,
     strip_emojis,
     now_time,
+    render_interview_header,
     LISA_AVATAR_PATH,
     STAGE_LABELS_CLEAN
 )
@@ -31,7 +32,7 @@ from assets.interview_style import (
 # CONSTANTS
 # ─────────────────────────────────────────────
 STAGES       = ["easy", "medium", "hard"]
-TIME_LIMIT   = 30 * 60   # 30 minutes
+TIME_LIMIT   = 5 * 60   # 5 minutes
 BASE_Q_COUNT = sum(QUESTIONS_PER_LEVEL.values())   # 10
 
 # Words per second for typewriter — matches gTTS speed
@@ -179,18 +180,8 @@ def handle_answer(answer: str, resume_text: str):
     ideal_answer = evaluation["ideal_answer"]
     feedback     = evaluation["feedback"]
 
-    # Save to DB
-    save_question(
-        interview_id        = st.session_state.interview_id,
-        question_number     = st.session_state.total_q_index + 1,
-        difficulty_level    = level,
-        topic               = None,
-        question_text       = question,
-        user_answer         = answer,
-        ai_suggested_answer = ideal_answer,
-        score               = score,
-        feedback            = feedback
-    )
+    # Save to DB (Mocked)
+    pass
 
     # Store in history
     st.session_state.qa_history.append({
@@ -259,21 +250,8 @@ def finalize_interview():
     with st.spinner("LISA is generating your full evaluation report..."):
         ai_feedback = generate_session_feedback(qa_pairs)
 
-    complete_interview(st.session_state.interview_id, total_score)
-
-    save_report(
-        interview_id           = st.session_state.interview_id,
-        overall_score          = total_score,
-        performance_summary    = performance_summary,
-        technical_knowledge    = skill_scores["technical_knowledge"],
-        communication_skills   = skill_scores["communication_skills"],
-        problem_solving        = skill_scores["problem_solving"],
-        project_understanding  = skill_scores["project_understanding"],
-        strengths              = ai_feedback["strengths"],
-        areas_for_improvement  = ai_feedback["improvements"],
-        actionable_suggestions = ai_feedback["study_plan"],
-        report_pdf             = b""
-    )
+    # Complete interview and save report (Mocked)
+    pass
 
     st.session_state.final_score         = total_score
     st.session_state.skill_scores        = skill_scores
@@ -333,8 +311,13 @@ def show_results():
 
     # ── Hero ──────────────────────────────────
     st.markdown(f"""
+<<<<<<< HEAD
     <div style="background:linear-gradient(135deg,#0f172a,#1e1b4b);
                 border:1px solid #312e81;border-radius:20px;
+=======
+    <div style="background:linear-gradient(135deg,#141824,#1a1f2e);
+                border:1px solid #2d3548;border-radius:16px;
+>>>>>>> 4d0e189f (first update)
                 padding:36px;text-align:center;margin-bottom:24px;">
         <div style="font-size:12px;color:#64748b;letter-spacing:2px;
                     text-transform:uppercase;margin-bottom:10px;">
@@ -389,9 +372,15 @@ def show_results():
 
     # ONE single st.markdown call — open div, all bars, close div together
     st.markdown(f"""
+<<<<<<< HEAD
     <div style="background:#111827;border:1px solid #1e2d47;
                 border-radius:16px;padding:24px;margin-bottom:20px;">
         <div style="font-size:12px;font-weight:700;color:#00d4ff;
+=======
+    <div style="background:#1a1f2e;border:1px solid #2d3548;
+                border-radius:16px;padding:24px;margin-bottom:20px;">
+        <div style="font-size:12px;font-weight:700;color:#10b981;
+>>>>>>> 4d0e189f (first update)
                     letter-spacing:1.5px;text-transform:uppercase;
                     margin-bottom:20px;">Skill Breakdown</div>
         {skill_bar_html("Technical Knowledge",   tech)}
@@ -433,15 +422,26 @@ def show_results():
         topics = [t.strip() for t in study.split(",") if t.strip()] or [study]
         rows   = "".join([
             f'<div style="display:flex;align-items:flex-start;gap:12px;'
+<<<<<<< HEAD
             f'padding:10px 0;border-bottom:1px solid #1e293b;">'
             f'<span style="color:#00d4ff;font-weight:700;">→</span>'
+=======
+            f'padding:10px 0;border-bottom:1px solid #2d3548;">'
+            f'<span style="color:#10b981;font-weight:700;">→</span>'
+>>>>>>> 4d0e189f (first update)
             f'<span style="color:#e2e8f0;font-size:14px;">{t}</span></div>'
             for t in topics
         ])
         st.markdown(
+<<<<<<< HEAD
             f'<div style="background:#111827;border:1px solid #1e2d47;'
             f'border-radius:16px;padding:20px;margin-bottom:20px;">'
             f'<div style="font-size:12px;font-weight:700;color:#00d4ff;'
+=======
+            f'<div style="background:#1a1f2e;border:1px solid #2d3548;'
+            f'border-radius:16px;padding:20px;margin-bottom:20px;">'
+            f'<div style="font-size:12px;font-weight:700;color:#10b981;'
+>>>>>>> 4d0e189f (first update)
             f'letter-spacing:1.5px;text-transform:uppercase;margin-bottom:4px;">'
             f'Your Personalised Study Plan</div>'
             f'<div style="font-size:12px;color:#374151;margin-bottom:12px;">'
@@ -496,14 +496,9 @@ def interview_flow():
     init_interview()
     resume_text = get_resume_text()
 
-    # 3. Create DB record once
+    # 3. Create DB record once (Mocked)
     if st.session_state.interview_id is None:
-        filename = os.path.basename(st.session_state.get("resume_path", "unknown"))
-        st.session_state.interview_id = create_interview(
-            user_email      = st.session_state["user_email"],
-            resume_text     = resume_text,
-            resume_filename = filename
-        )
+        st.session_state.interview_id = "dummy_id"
 
     # 4. Results / finalize check
     if st.session_state.get("interview_finalized"):
@@ -515,44 +510,111 @@ def interview_flow():
         st.rerun()
         return
 
-    # ── HEADER ──────────────────────────────────────────────────
+    # ── COMPUTE HEADER DATA ──────────────────────────────────────
     elapsed    = int(time.time() - st.session_state.start_time)
-    mins, secs = divmod(elapsed, 60)
     remaining  = max(0, TIME_LIMIT - elapsed)
     rem_m, rem_s = divmod(remaining, 60)
+    timer_str  = f"{rem_m:02d}:{rem_s:02d}"
 
     total_done  = st.session_state.total_q_index
-    # Total expected = base 10 + any adaptive questions fired so far
     total_exp   = max(BASE_Q_COUNT, total_done + 1)
-    progress    = min(total_done / BASE_Q_COUNT, 1.0)
     stage       = st.session_state.interview_stage
     stage_label = STAGE_LABELS_CLEAN.get(stage, stage.title())
 
-    h1, h2, h3, h4 = st.columns([4, 1, 1, 1])
-    with h1:
-        st.progress(
-            progress,
-            text=f"{stage_label} Stage  ·  Question {total_done + 1}"
-        )
-    with h2:
-        st.metric("Elapsed", f"{mins:02d}:{secs:02d}")
-    with h3:
-        st.metric("Remaining", f"{rem_m:02d}:{rem_s:02d}")
-    with h4:
-        if st.button("End Interview", type="secondary"):
-            st.session_state.interview_complete = True
+    # ── HEADER BAR (outside the scrollable area) ─────────────────
+    interview_title = st.session_state.get("interview_title", "Interview Session")
+    render_interview_header(
+        title     = interview_title,
+        q_num     = total_done + 1,
+        total_q   = BASE_Q_COUNT,
+        level     = stage,
+        timer_str = timer_str
+    )
+
+    # ══════════════════════════════════════════════════════════════
+    # SCROLLABLE CHAT BOX — all messages render INSIDE this
+    # container so the page itself never scrolls.
+    # ══════════════════════════════════════════════════════════════
+    chat_box = st.container(height=480, border=True)
+
+    with chat_box:
+
+        # ── CONVERSATION HISTORY ─────────────────────────────────
+        for i, qa in enumerate(st.session_state.qa_history, 1):
+
+            # LISA bubble
+            with st.chat_message("assistant", avatar=LISA_AVATAR_PATH):
+                st.markdown(
+                    f'<span style="font-size:11px;font-weight:700;color:#10b981;">'
+                    f'LISA &nbsp;•&nbsp; AI Interviewer</span>'
+                    f'{stage_badge(qa["level"])}',
+                    unsafe_allow_html=True
+                )
+                st.markdown(strip_emojis(qa["question"]))
+
+            # User bubble — dark card
+            st.markdown(f"""
+            <div style="
+                background: #162032;
+                border: 1px solid #1e3a5e;
+                border-radius: 14px 4px 14px 14px;
+                padding: 14px 18px;
+                max-width: 82%;
+                margin-left: auto;
+                margin-right: 0;
+                margin-bottom: 10px;
+                box-shadow: 0 2px 12px rgba(0,0,0,0.2);
+            ">
+                <span style="font-size:11px;font-weight:700;color:#60a5fa;">
+                    {st.session_state.get("user_name", "You")}
+                </span>
+                <div style="color:#dbeafe;font-size:14px;
+                            line-height:1.7;margin-top:6px;">
+                    {qa["answer"]}
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+        # ── GENERATE CURRENT QUESTION ────────────────────────────
+        if st.session_state.current_question is None:
+            with st.chat_message("assistant", avatar=LISA_AVATAR_PATH):
+                show_typing_indicator()
+
+            question, level = get_next_question(resume_text)
+
+            # Track to prevent duplicates
+            st.session_state.asked_questions.add(question.strip().lower()[:80])
+
+            st.session_state.current_question   = question
+            st.session_state.current_level      = level
+            st.session_state.question_displayed = False
+            st.session_state.question_time      = now_time()
             st.rerun()
 
-    st.divider()
+        question = st.session_state.current_question
+        level    = st.session_state.current_level
 
-    # ── CONVERSATION HISTORY ─────────────────────────────────────
-    for i, qa in enumerate(st.session_state.qa_history, 1):
+        # ── ADAPTIVE BANNER ──────────────────────────────────────
+        if st.session_state.adaptive_mode:
+            d   = st.session_state.adaptive_direction
+            msg = (
+                "Let me rephrase that — I want to make sure we cover this concept."
+                if d == "easier"
+                else "Strong response. Let me take this a level deeper."
+            )
+            st.markdown(
+                f'<div style="background:#1a1f2e;border-left:3px solid #6366f1;'
+                f'border-radius:0 8px 8px 0;padding:10px 16px;margin:8px 0;'
+                f'font-size:13px;color:#a5b4fc;">LISA — {msg}</div>',
+                unsafe_allow_html=True
+            )
 
-        # LISA bubble
+        # ── LISA QUESTION BUBBLE ─────────────────────────────────
         with st.chat_message("assistant", avatar=LISA_AVATAR_PATH):
             st.markdown(
-                f'<span style="font-size:11px;font-weight:700;color:#00d4ff;">'
+                f'<span style="font-size:11px;font-weight:700;color:#10b981;">'
                 f'LISA &nbsp;•&nbsp; AI Interviewer</span>'
+<<<<<<< HEAD
                 f'{stage_badge(qa["level"])}',
                 unsafe_allow_html=True
             )
@@ -692,13 +754,80 @@ def interview_flow():
             from utils.speech_to_text import transcribe_audio_debug
             transcribed, debug_msg = transcribe_audio_debug(audio_input)
 
+=======
+                f'{stage_badge(level)}',
+                unsafe_allow_html=True
+            )
+
+            clean_q = strip_emojis(question)
+
+            if not st.session_state.question_displayed:
+                play_lisa_voice(clean_q)
+                st.write_stream(typewriter_stream(clean_q))
+                st.session_state.question_displayed = True
+            else:
+                st.markdown(clean_q)
+
+    # ══════════════════════════════════════════════════════════════
+    # INPUT AREA — sits BELOW the chat box (never scrolls away)
+    # ══════════════════════════════════════════════════════════════
+    user_name = st.session_state.get("user_name", "You")
+
+    # ── helper: render answer as dark card ──
+    def show_user_bubble(text: str):
+        st.markdown(f"""
+        <div style="
+            background: #162032;
+            border: 1px solid #1e3a5e;
+            border-radius: 14px 4px 14px 14px;
+            padding: 14px 18px;
+            max-width: 82%;
+            margin-left: auto;
+            margin-right: 0;
+            margin-bottom: 8px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.2);
+        ">
+            <span style="font-size:11px;font-weight:700;color:#60a5fa;">
+                {user_name}
+            </span>
+            <div style="color:#dbeafe;font-size:14px;
+                        line-height:1.7;margin-top:6px;">
+                {text}
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    # Step 1 — voice transcribed in previous run → show bubble + submit
+    prefill = st.session_state.pop(f"prefill_{total_done}", None)
+    if prefill:
+        show_user_bubble(prefill)
+        handle_answer(prefill, resume_text)
+        return
+
+    # Step 2 — mic pinned at bottom
+    audio_input = st.audio_input(
+        "Hold to record your answer",
+        key              = f"voice_{total_done}",
+        label_visibility = "collapsed"
+    )
+
+    if audio_input:
+        with st.spinner("Transcribing..."):
+            from utils.speech_to_text import transcribe_audio_debug
+            transcribed, debug_msg = transcribe_audio_debug(audio_input)
+
+>>>>>>> 4d0e189f (first update)
         if transcribed and transcribed.strip():
             st.session_state[f"prefill_{total_done}"] = transcribed.strip()
             st.rerun()
         else:
             st.markdown(f"""
             <div style="
+<<<<<<< HEAD
                 background:#1a0a0a;border:1px solid #7f1d1d;
+=======
+                background:#1f1215;border:1px solid #7f1d1d;
+>>>>>>> 4d0e189f (first update)
                 border-radius:10px;padding:12px 16px;margin:8px 0;
                 color:#fca5a5;font-size:13px;">
                 ⚠️ Could not transcribe: <b>{debug_msg}</b><br>
@@ -710,7 +839,11 @@ def interview_flow():
 
     # Step 3 — chat_input pinned at bottom
     typed = st.chat_input(
+<<<<<<< HEAD
         "Type your answer and press Enter  (or use mic above)",
+=======
+        "Type your answer or tap the mic to speak...",
+>>>>>>> 4d0e189f (first update)
         key = f"chat_{total_done}"
     )
     if typed:

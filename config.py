@@ -21,8 +21,8 @@ REDIRECT_URI         = os.getenv("REDIRECT_URI", "http://localhost:8501")
 # SUPABASE / POSTGRESQL
 # ─────────────────────────────────────────────
 DATABASE_URL = os.getenv("DATABASE_URL")
-if not DATABASE_URL:
-    raise ValueError("DATABASE_URL not found in .env")
+# Fallback or warning handled in database/db.py
+
 
 # ─────────────────────────────────────────────
 # INTERVIEW STRUCTURE
@@ -30,25 +30,25 @@ if not DATABASE_URL:
 
 # Fixed question counts per level
 QUESTIONS_PER_LEVEL = {
-    "easy":   4,   # Q1 = intro/non-tech, Q2-Q4 = resume-based easy tech
-    "medium": 3,
-    "hard":   3,
+    "easy":   3,
+    "medium": 1,
+    "hard":   1,
 }
 
 # Adaptive questions fire INLINE after medium/hard — not at the end
 # Range: min 0, max 1 adaptive per medium/hard question
 ADAPTIVE_TRIGGER = {
-    "medium": {"min_score": None, "max_score": 4.0},  # score < 4  → 1 adaptive (easier)
-    "hard":   {"min_score": 7.0,  "max_score": None},  # score > 7  → 1 adaptive (deeper)
+    "medium": {"min_score": None, "max_score": -1.0},  # Never trigger
+    "hard":   {"min_score": 11.0,  "max_score": None},  # Never trigger
 }
 
 # Session size
-MIN_QUESTIONS = 10   # 4 easy + 3 medium + 3 hard (no adaptives triggered)
-MAX_QUESTIONS = 16   # + up to 6 adaptive (1 per each medium/hard question)
+MIN_QUESTIONS = 5   # 3 easy + 1 medium + 1 hard (no adaptives triggered)
+MAX_QUESTIONS = 5   # strictly limit to 5 questions
 
 # Score thresholds for adaptive branching
-SCORE_WEAK   = 4.0   # Below this on medium → fire easier follow-up immediately
-SCORE_STRONG = 7.0   # Above this on hard   → fire deeper follow-up immediately
+SCORE_WEAK   = -1.0   # Disabled: Below this on medium → fire easier follow-up immediately
+SCORE_STRONG = 11.0   # Disabled: Above this on hard   → fire deeper follow-up immediately
 
 # First question is always this — every real interview starts here
 INTRO_QUESTION = "Tell me about yourself and walk me through your resume."
