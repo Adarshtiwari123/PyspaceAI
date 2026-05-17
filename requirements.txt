@@ -109,6 +109,4 @@ python-dotenv>=1.0.0
 
 
 # # docx
-=======
 # # docx
->>>>>>> 4d0e189f (first update)
