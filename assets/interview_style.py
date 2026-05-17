@@ -40,6 +40,8 @@ def strip_emojis(text: str) -> str:
         u"\U0001F680-\U0001F9FF" u"\U00002600-\U000027BF"
         u"\U0001FA00-\U0001FA9F" "]+", flags=re.UNICODE
     )
+    if not isinstance(text, str):
+        text = str(text) if text is not None else ""
     return pattern.sub("", text).strip()
 
 
