@@ -556,16 +556,7 @@ def interview_flow():
             """, unsafe_allow_html=True)
 
 
-            question, level = get_next_question(resume_text)
 
-            # Track to prevent duplicates
-            st.session_state.asked_questions.add(question.strip().lower()[:80])
-
-            st.session_state.current_question   = question
-            st.session_state.current_level      = level
-            st.session_state.question_displayed = False
-            st.session_state.question_time      = now_time()
-            st.rerun()
 
         question = st.session_state.current_question
         level    = st.session_state.current_level
@@ -588,13 +579,26 @@ def interview_flow():
         # ── LISA QUESTION BUBBLE ─────────────────────────────────
         with st.chat_message("assistant", avatar=LISA_AVATAR_PATH):
             st.markdown(
-                f'<span style="font-size:11px;font-weight:700;color:#10b981;">'
+                f'<span style="font-size:11px;font-weight:700;color:#00d4ff;">'
                 f'LISA &nbsp;•&nbsp; AI Interviewer</span>'
-                f'{stage_badge(level)}',
+                f'{stage_badge(level)}'
+                f'<span style="font-size:11px;color:#374151;margin-left:8px;">'
+                f'Question {total_done + 1}</span>',
                 unsafe_allow_html=True
             )
-            st.markdown(strip_emojis(question))
-            st.caption(st.session_state.get("question_time", ""))
+
+            clean_q = strip_emojis(question)
+
+            if not st.session_state.question_displayed:
+                # ── VOICE plays first (hidden) ──
+                play_lisa_voice(clean_q)
+                # ── TYPEWRITER runs simultaneously ──
+                st.write_stream(typewriter_stream(clean_q, WORDS_PER_SECOND))
+                st.session_state.question_displayed = True
+            else:
+                st.markdown(clean_q)
+
+            st.caption(st.session_state.get("question_time", now_time()))
 
         # User bubble — dark card matching LISA style
 
@@ -635,77 +639,7 @@ def interview_flow():
         )
 
     # ── LISA QUESTION BUBBLE ──────────────────────────────────────
-    with st.chat_message("assistant", avatar=LISA_AVATAR_PATH):
-        st.markdown(
-            f'<span style="font-size:11px;font-weight:700;color:#00d4ff;">'
-            f'LISA &nbsp;•&nbsp; AI Interviewer</span>'
-            f'{stage_badge(level)}'
-            f'<span style="font-size:11px;color:#374151;margin-left:8px;">'
-            f'Question {total_done + 1}</span>',
-            unsafe_allow_html=True
-        )
 
-        clean_q = strip_emojis(question)
-
-        if not st.session_state.question_displayed:
-            # ── VOICE plays first (hidden) ──
-            play_lisa_voice(clean_q)
-            # ── TYPEWRITER runs simultaneously ──
-            st.write_stream(typewriter_stream(clean_q, WORDS_PER_SECOND))
-            st.session_state.question_displayed = True
-        else:
-            st.markdown(clean_q)
-
-        st.caption(st.session_state.get("question_time", now_time()))
-
-    # ── USER INPUT ────────────────────────────────────────────────
-    user_name = st.session_state.get("user_name", "You")
-
-    # ── helper: render answer as dark card matching LISA bubble ──
-    def show_user_bubble(text: str):
-        st.markdown(f"""
-        <div style="
-            background: #0f1f3d;
-            border: 1px solid #1e3a6e;
-            border-radius: 16px 0 16px 16px;
-            padding: 16px 20px;
-            max-width: 76%;
-            margin-left: auto;
-            margin-right: 0;
-            margin-bottom: 8px;
-            box-shadow: 0 0 20px rgba(37,99,235,0.08);
-        ">
-            <span style="font-size:11px;font-weight:700;color:#60a5fa;">
-                {user_name}
-            </span>
-            <span style="font-size:11px;color:#1e3a6e;margin-left:8px;">
-                {now_time()}
-            </span>
-            <div style="color:#dbeafe;font-size:15px;
-                        line-height:1.7;margin-top:8px;">
-                {text}
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-
-    # Step 1 — voice transcribed in previous run → show bubble + submit
-    prefill = st.session_state.pop(f"prefill_{total_done}", None)
-    if prefill:
-        show_user_bubble(prefill)
-        handle_answer(prefill, resume_text)
-        return
-
-    # Step 2 — mic widget
-    audio_input = st.audio_input(
-        "Hold to record your answer",
-        key              = f"voice_{total_done}",
-        label_visibility = "collapsed"
-    )
-
-    if audio_input:
-        with st.spinner("Transcribing..."):
-            from utils.speech_to_text import transcribe_audio_debug
-            transcribed, debug_msg = transcribe_audio_debug(audio_input)
 
 
     # ══════════════════════════════════════════════════════════════
