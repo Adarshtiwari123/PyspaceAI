@@ -433,37 +433,15 @@ def show_results():
         topics = [t.strip() for t in study.split(",") if t.strip()] or [study]
         rows   = "".join([
             f'<div style="display:flex;align-items:flex-start;gap:12px;'
-<<<<<<< HEAD
-
-            f'padding:10px 0;border-bottom:1px solid #1e293b;">'
-            f'<span style="color:#00d4ff;font-weight:700;">→</span>'
-
             f'padding:10px 0;border-bottom:1px solid #2d3548;">'
             f'<span style="color:#10b981;font-weight:700;">→</span>'
-
-=======
-            f'padding:10px 0;border-bottom:1px solid #2d3548;">'
-            f'<span style="color:#10b981;font-weight:700;">→</span>'
->>>>>>> 1cf65828 (remove indenation)
             f'<span style="color:#e2e8f0;font-size:14px;">{t}</span></div>'
             for t in topics
         ])
         st.markdown(
-<<<<<<< HEAD
-
-            f'<div style="background:#111827;border:1px solid #1e2d47;'
-            f'border-radius:16px;padding:20px;margin-bottom:20px;">'
-            f'<div style="font-size:12px;font-weight:700;color:#00d4ff;'
-
             f'<div style="background:#1a1f2e;border:1px solid #2d3548;'
             f'border-radius:16px;padding:20px;margin-bottom:20px;">'
             f'<div style="font-size:12px;font-weight:700;color:#10b981;'
-
-=======
-            f'<div style="background:#1a1f2e;border:1px solid #2d3548;'
-            f'border-radius:16px;padding:20px;margin-bottom:20px;">'
-            f'<div style="font-size:12px;font-weight:700;color:#10b981;'
->>>>>>> 1cf65828 (remove indenation)
             f'letter-spacing:1.5px;text-transform:uppercase;margin-bottom:4px;">'
             f'Your Personalised Study Plan</div>'
             f'<div style="font-size:12px;color:#374151;margin-bottom:12px;">'
@@ -599,7 +577,6 @@ def interview_flow():
             """, unsafe_allow_html=True)
 
 
-<<<<<<< HEAD
             question, level = get_next_question(resume_text)
 
             # Track to prevent duplicates
@@ -666,8 +643,7 @@ def interview_flow():
             </div>
         </div>
         """, unsafe_allow_html=True)
-=======
->>>>>>> 1cf65828 (remove indenation)
+
 
     # ── GENERATE CURRENT QUESTION ─────────────────────────────────
     if st.session_state.current_question is None:
@@ -776,14 +752,6 @@ def interview_flow():
             from utils.speech_to_text import transcribe_audio_debug
             transcribed, debug_msg = transcribe_audio_debug(audio_input)
 
-<<<<<<< HEAD
-
-                f'{stage_badge(level)}',
-                unsafe_allow_html=True
-            )
-=======
->>>>>>> 1cf65828 (remove indenation)
-
 
     # ══════════════════════════════════════════════════════════════
     # INPUT AREA — sits BELOW the chat box (never scrolls away)
@@ -859,15 +827,7 @@ def interview_flow():
 
     # Step 3 — chat_input pinned at bottom
     typed = st.chat_input(
-<<<<<<< HEAD
-
-        "Type your answer and press Enter  (or use mic above)",
-
         "Type your answer or tap the mic to speak...",
-
-=======
-        "Type your answer or tap the mic to speak...",
->>>>>>> 1cf65828 (remove indenation)
         key = f"chat_{total_done}"
     )
     if typed:
