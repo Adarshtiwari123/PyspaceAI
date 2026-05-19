@@ -102,6 +102,11 @@ if "initialized" not in st.session_state:
         st.session_state.questions_list = json.loads(unquote(params.get("questions", "[]")))
         st.session_state.ai_greeting = unquote(params.get("ai_greeting", "Hello!"))
         st.session_state.conversation_history = json.loads(unquote(params.get("history", "[]")))
+
+    # Enhance system prompt to sound more like a Senior Authority
+    if st.session_state.conversation_history and st.session_state.conversation_history[0].get("role") == "system":
+        if "Senior Authority" not in st.session_state.conversation_history[0]["content"]:
+            st.session_state.conversation_history[0]["content"] += " You are a Senior Authority and Expert in this domain. Conduct the interview as a highly experienced industry veteran. Be highly professional, realistic, and evaluate the candidate strictly but constructively. Ask only one question at a time and wait for the user to answer."
         
     st.session_state.current_question_number = 1
     st.session_state.interview_active = True
@@ -109,7 +114,7 @@ if "initialized" not in st.session_state:
     st.session_state.messages = [
         {"role": "assistant", "content": st.session_state.ai_greeting}
     ]
-    speak(st.session_state.ai_greeting)
+    st.session_state.audio_to_play = st.session_state.ai_greeting
 
 # Override active status if session ended
 if session_ended:
@@ -144,8 +149,16 @@ elapsed = int(time.time() - st.session_state.start_time)
 remaining = max(st.session_state.duration_minutes * 60 - elapsed, 0)
 mins, secs = divmod(remaining, 60)
 
+# Parse role from system prompt for header title
+role_title = "AI Interview"
+if st.session_state.get("conversation_history") and st.session_state.conversation_history[0].get("role") == "system":
+    import re
+    match = re.search(r"role of (.*?)\.", st.session_state.conversation_history[0]["content"], re.IGNORECASE)
+    if match:
+        role_title = match.group(1).title() + " Interview"
+
 render_interview_header(
-    title="AI Interview",
+    title=role_title,
     q_num=st.session_state.current_question_number,
     total_q=st.session_state.total_questions,
     level="medium",
@@ -161,7 +174,7 @@ st.progress(
 
 # CHAT MESSAGES
 for msg in st.session_state.messages:
-    avatar = "🤖" if msg["role"] == "assistant" else "👤"
+    avatar = "assets/lisa_avatar.png" if msg["role"] == "assistant" else "👤"
     with st.chat_message(msg["role"], avatar=avatar):
         st.write(msg["content"])
 
@@ -256,10 +269,7 @@ if st.session_state.interview_active:
                         "role": "assistant",
                         "content": data["next_ai_message"]
                     })
-                    # Render AI message immediately
-                    with st.chat_message("assistant", avatar="🤖"):
-                        st.write(data["next_ai_message"])
-                    speak(data["next_ai_message"])
+                    st.session_state.audio_to_play = data["next_ai_message"]
                 
                 if data.get("interview_complete"):
                     st.session_state.interview_active = False
@@ -283,3 +293,8 @@ if not st.session_state.interview_active:
     url=https://interviewflow-suite-one.vercel.app/analytics">
     """, unsafe_allow_html=True)
     st.success("✅ Interview complete! Redirecting to your results...")
+
+# STEP 8: PLAY AUDIO FOR LATEST MESSAGE (ensure this runs after UI renders)
+if st.session_state.get("audio_to_play"):
+    speak(st.session_state.audio_to_play)
+    st.session_state.audio_to_play = None

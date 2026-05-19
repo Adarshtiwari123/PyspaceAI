@@ -58,9 +58,12 @@ def _sarvam_tts(text: str, language: str, speaker: str, pace: float) -> bytes | 
     Returns raw WAV bytes or None on failure.
     Max 2500 chars per request — longer text is split automatically.
     """
+    import wave
+    import io
+
     # Split long text into chunks of 2400 chars on sentence boundaries
     chunks = _split_text(text, max_len=2400)
-    all_audio = b""
+    audio_chunks = []
 
     for chunk in chunks:
         payload = {
@@ -81,7 +84,7 @@ def _sarvam_tts(text: str, language: str, speaker: str, pace: float) -> bytes | 
             resp.raise_for_status()
             audios = resp.json().get("audios", [])
             if audios:
-                all_audio += base64.b64decode(audios[0])
+                audio_chunks.append(base64.b64decode(audios[0]))
         except requests.exceptions.HTTPError as e:
             st.warning(f"[Sarvam TTS] HTTP {e.response.status_code}: {e.response.text[:200]}")
             return None
@@ -89,7 +92,32 @@ def _sarvam_tts(text: str, language: str, speaker: str, pace: float) -> bytes | 
             st.warning(f"[Sarvam TTS] Error: {e}")
             return None
 
-    return all_audio if all_audio else None
+    if not audio_chunks:
+        return None
+        
+    if len(audio_chunks) == 1:
+        return audio_chunks[0]
+
+    # Properly concatenate multiple WAV files
+    try:
+        data = []
+        with wave.open(io.BytesIO(audio_chunks[0]), 'rb') as w:
+            params = w.getparams()
+            data.append(w.readframes(w.getnframes()))
+        for chunk in audio_chunks[1:]:
+            with wave.open(io.BytesIO(chunk), 'rb') as w:
+                data.append(w.readframes(w.getnframes()))
+                
+        out_io = io.BytesIO()
+        with wave.open(out_io, 'wb') as w:
+            w.setparams(params)
+            for d in data:
+                w.writeframes(d)
+        return out_io.getvalue()
+    except Exception as e:
+        print("WAV concat error:", e)
+        # Fallback to just the first chunk if concatenation fails
+        return audio_chunks[0]
 
 
 def _split_text(text: str, max_len: int = 2400) -> list[str]:
