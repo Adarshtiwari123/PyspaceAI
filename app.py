@@ -1,32 +1,285 @@
-import os
 import streamlit as st
+import requests
+import json
+import time
+from urllib.parse import unquote
+import os
 
+# From config.py
+from config import BACKEND_URL
+
+# Import styles
+from assets.interview_style import inject_interview_styles, render_interview_header
+
+# Voice input import (do not remove)
+from utils.speech_to_text import transcribe_audio
+from utils.text_to_speech import speak
+
+# Set page config
 st.set_page_config(
-    page_title = "Pyspace AI Interview",
-    page_icon  = "🤖",
-    layout     = "wide",
-    initial_sidebar_state = "collapsed"
+    page_title="Interview Chat",
+    page_icon="⏱️",
+    layout="wide"
 )
 
-if not os.path.exists("user_resumes"):
-    os.makedirs("user_resumes")
+# STEP 1: READ URL PARAMS
+params = st.query_params
 
-# Hardcode user state to bypass login
-if "logged_in" not in st.session_state:
-    st.session_state.logged_in = True
-if "user_email" not in st.session_state:
-    st.session_state.user_email = "guest@example.com"
-if "user_name" not in st.session_state:
-    st.session_state.user_name = "Guest"
+token = params.get("token")
+session_id = params.get("session_id")
+userid = params.get("userid", "0")
 
-# Force interview to start directly
-st.session_state.interview_started = True
+if not token or not session_id:
+    st.error("Please start your interview from the portal.")
+    st.markdown("[← Go to Portal](https://interviewflow-suite-one.vercel.app)")
+    st.stop()
 
-# Provide a default resume text if none exists to ensure the AI has context
-if "resume_text" not in st.session_state:
-    st.session_state.resume_text = "Experienced Software Engineer with a background in Python, machine learning, and web development."
+# 1. Call backend to verify session is valid
+session_ended = False
+try:
+    verify_url = f"{BACKEND_URL}/interview/verify-session?session_id={session_id}&userid={userid}"
+    verify_res = requests.get(verify_url, headers={"Authorization": f"Bearer {token}"}, timeout=60)
+    
+    try:
+        res_data = verify_res.json()
+    except json.JSONDecodeError:
+        res_data = {}
 
-from interview.interview_engine import interview_flow
+    if verify_res.status_code != 200 or not res_data.get("success"):
+        if res_data.get("status") == "ended":
+            session_ended = True
+        else:
+            st.error("Invalid or unauthorized session.")
+            st.stop()
+except Exception as e:
+    st.error(f"Security check failed: {str(e)}")
+    st.stop()
 
-# Run the interview flow directly
-interview_flow()
+# 2. Verify token is valid
+try:
+    me_url = f"{BACKEND_URL}/me"
+    me_res = requests.get(me_url, headers={"Authorization": f"Bearer {token}"}, timeout=60)
+    if me_res.status_code != 200:
+        st.error("Session expired. Please login again.")
+        st.markdown("[← Go to Portal](https://interviewflow-suite-one.vercel.app)")
+        st.stop()
+except Exception as e:
+    st.error(f"Authentication check failed: {str(e)}")
+    st.stop()
+
+# STEP 2: INITIALIZE SESSION STATE (only once)
+if "initialized" not in st.session_state:
+    st.session_state.initialized = True
+    st.session_state.token = params.get("token")
+    st.session_state.session_id = params.get("session_id", "0")
+    st.session_state.userid = int(params.get("userid", 0))
+    st.session_state.duration_minutes = int(params.get("duration", 15))
+    st.session_state.total_questions = int(params.get("total_questions", 5))
+    
+    # Fetch questions and greeting from backend instead of URL params
+    try:
+        confirm_url = f"{BACKEND_URL}/api/interview/confirm-start"
+        confirm_res = requests.post(
+            confirm_url,
+            json={
+                "session_id": st.session_state.session_id,
+                "userid": st.session_state.userid
+            },
+            headers={"Authorization": f"Bearer {st.session_state.token}"},
+            timeout=15
+        )
+        if confirm_res.status_code == 200:
+            confirm_data = confirm_res.json()
+            st.session_state.questions_list = confirm_data.get("questions_list", [])
+            st.session_state.ai_greeting = confirm_data.get("ai_greeting", "Hello!")
+            st.session_state.conversation_history = confirm_data.get("conversation_history", [])
+        else:
+            # Fallback to URL params if API fails
+            st.session_state.questions_list = json.loads(unquote(params.get("questions", "[]")))
+            st.session_state.ai_greeting = unquote(params.get("ai_greeting", "Hello!"))
+            st.session_state.conversation_history = json.loads(unquote(params.get("history", "[]")))
+    except Exception as e:
+        st.session_state.questions_list = json.loads(unquote(params.get("questions", "[]")))
+        st.session_state.ai_greeting = unquote(params.get("ai_greeting", "Hello!"))
+        st.session_state.conversation_history = json.loads(unquote(params.get("history", "[]")))
+        
+    st.session_state.current_question_number = 1
+    st.session_state.interview_active = True
+    st.session_state.start_time = time.time()
+    st.session_state.messages = [
+        {"role": "assistant", "content": st.session_state.ai_greeting}
+    ]
+    speak(st.session_state.ai_greeting)
+
+# Override active status if session ended
+if session_ended:
+    st.session_state.interview_active = False
+
+# STEP 6: END INTERVIEW FUNCTION
+def _call_end_interview():
+    try:
+        requests.post(
+            f"{BACKEND_URL}/api/interview/end",
+            json={
+                "session_id": st.session_state.session_id,
+                "userid": st.session_state.userid,
+                "conversation_history": st.session_state.conversation_history
+            },
+            headers={"Authorization": f"Bearer {st.session_state.token}"},
+            timeout=15
+        )
+    except:
+        pass
+# Handle manual end or session end
+if st.session_state.get("interview_complete", False) or session_ended:
+    if st.session_state.interview_active:
+        st.session_state.interview_active = False
+        _call_end_interview()
+
+# Call styles
+inject_interview_styles()
+
+# TIMER CALCULATION
+elapsed = int(time.time() - st.session_state.start_time)
+remaining = max(st.session_state.duration_minutes * 60 - elapsed, 0)
+mins, secs = divmod(remaining, 60)
+
+render_interview_header(
+    title="AI Interview",
+    q_num=st.session_state.current_question_number,
+    total_q=st.session_state.total_questions,
+    level="medium",
+    timer_str=f"{mins:02d}:{secs:02d}",
+    remaining=remaining
+)
+
+# PROGRESS BAR
+st.progress(
+    (st.session_state.current_question_number - 1) / st.session_state.total_questions,
+    text=f"Question {st.session_state.current_question_number} of {st.session_state.total_questions}"
+)
+
+# CHAT MESSAGES
+for msg in st.session_state.messages:
+    avatar = "🤖" if msg["role"] == "assistant" else "👤"
+    with st.chat_message(msg["role"], avatar=avatar):
+        st.write(msg["content"])
+
+# INPUT AREA (only if interview_active is True)
+if st.session_state.interview_active:
+    # Callbacks for clearing inputs (avoids StreamlitAPIException)
+    def on_send():
+        st.session_state.submit_clicked = True
+        st.session_state.user_message = st.session_state.get("answer_input", "")
+        st.session_state.answer_input = ""  # Allowed in callback
+        st.session_state.last_transcribed = ""
+
+    def on_skip():
+        st.session_state.skip_clicked = True
+        st.session_state.answer_input = ""
+        st.session_state.last_transcribed = ""
+
+    # Process voice input from state (before rendering text_input to avoid exception)
+    if "voice_mic" in st.session_state and st.session_state.voice_mic:
+        audio_bytes = st.session_state.voice_mic
+        # Only transcribe if it's a new recording
+        if audio_bytes != st.session_state.get("last_audio_bytes", b""):
+            transcribed_text = transcribe_audio(audio_bytes)
+            if transcribed_text:
+                st.session_state.answer_input = transcribed_text
+                st.session_state.last_audio_bytes = audio_bytes
+
+    # Record answer above the input box (make it small)
+    col_rec, _ = st.columns([3, 7])
+    with col_rec:
+        st.audio_input("Record Answer", key="voice_mic", label_visibility="collapsed")
+        
+    # Input box and buttons below
+    col_input, col_actions = st.columns([7, 3])
+    with col_input:
+        st.text_input(
+            "Type your answer or use voice...", 
+            key="answer_input",
+            label_visibility="collapsed",
+            on_change=on_send
+        )
+        
+    with col_actions:
+        col_skip, col_send = st.columns([1, 2])
+        with col_skip:
+            st.button("⏭️", on_click=on_skip, key="btn_skip")
+            
+        with col_send:
+            st.button("Send", type="primary", on_click=on_send, key="btn_send")
+
+    # STEP 4: HANDLE ANSWER SUBMISSION
+    send_clicked = st.session_state.get("submit_clicked", False)
+    skip_clicked = st.session_state.get("skip_clicked", False)
+    
+    if send_clicked or skip_clicked:
+        # Reset triggers
+        st.session_state.submit_clicked = False
+        st.session_state.skip_clicked = False
+        
+        user_input = st.session_state.get("user_message", "") if send_clicked else ""
+        answer_text = user_input if user_input else ""
+        is_skipped = True if skip_clicked else False
+
+        if not is_skipped:
+            st.session_state.messages.append({"role": "user", "content": answer_text})
+            # Render user message immediately
+            with st.chat_message("user", avatar="👤"):
+                st.write(answer_text)
+
+        with st.spinner("LISA is thinking..."):
+            try:
+                res = requests.post(
+                    f"{BACKEND_URL}/api/interview/answer",
+                    json={
+                        "session_id": st.session_state.session_id,
+                        "userid": st.session_state.userid,
+                        "answer": answer_text,
+                        "question_number": st.session_state.current_question_number,
+                        "is_skipped": is_skipped,
+                        "conversation_history": st.session_state.conversation_history
+                    },
+                    headers={"Authorization": f"Bearer {st.session_state.token}"},
+                    timeout=30
+                )
+                data = res.json()
+                
+                st.session_state.conversation_history = data["conversation_history"]
+                st.session_state.current_question_number = data["question_number"]
+                
+                if data.get("next_ai_message"):
+                    st.session_state.messages.append({
+                        "role": "assistant",
+                        "content": data["next_ai_message"]
+                    })
+                    # Render AI message immediately
+                    with st.chat_message("assistant", avatar="🤖"):
+                        st.write(data["next_ai_message"])
+                    speak(data["next_ai_message"])
+                
+                if data.get("interview_complete"):
+                    st.session_state.interview_active = False
+                    _call_end_interview()
+                    
+            except Exception as e:
+                st.error(f"Connection error: {str(e)}")
+
+        st.rerun()
+
+# STEP 5: AUTO-END ON TIMER
+if remaining <= 0 and st.session_state.interview_active:
+    st.session_state.interview_active = False
+    _call_end_interview()
+    st.rerun()
+
+# STEP 7: INTERVIEW COMPLETE SCREEN
+if not st.session_state.interview_active:
+    st.markdown("""
+    <meta http-equiv="refresh" content="3;
+    url=https://interviewflow-suite-one.vercel.app/analytics">
+    """, unsafe_allow_html=True)
+    st.success("✅ Interview complete! Redirecting to your results...")
