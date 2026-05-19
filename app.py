@@ -23,7 +23,12 @@ st.set_page_config(
 )
 
 # STEP 1: READ URL PARAMS
-params = st.query_params
+# Save params to session state on first load and clear URL to hide sensitive info
+if "url_params" not in st.session_state:
+    st.session_state.url_params = st.query_params.to_dict()
+    st.query_params.clear()
+
+params = st.session_state.url_params
 
 token = params.get("token")
 session_id = params.get("session_id")
@@ -46,11 +51,18 @@ try:
         res_data = {}
 
     if verify_res.status_code != 200 or not res_data.get("success"):
-        if res_data.get("status") == "ended":
-            session_ended = True
-        else:
-            st.error("Invalid or unauthorized session.")
-            st.stop()
+        st.error("Invalid or unauthorized session.")
+        st.stop()
+        
+    if res_data.get("status") == "ended":
+        st.warning("This interview has already been completed.")
+        st.markdown("""
+        <meta http-equiv="refresh" content="3;
+        url=https://interviewflow-suite-one.vercel.app/analytics">
+        """, unsafe_allow_html=True)
+        st.success("✅ Redirecting to your results...")
+        st.stop()
+
 except Exception as e:
     st.error(f"Security check failed: {str(e)}")
     st.stop()
@@ -114,11 +126,9 @@ if "initialized" not in st.session_state:
     st.session_state.messages = [
         {"role": "assistant", "content": st.session_state.ai_greeting}
     ]
+    st.session_state.animate_last = True
     st.session_state.audio_to_play = st.session_state.ai_greeting
 
-# Override active status if session ended
-if session_ended:
-    st.session_state.interview_active = False
 
 # STEP 6: END INTERVIEW FUNCTION
 def _call_end_interview():
@@ -135,8 +145,8 @@ def _call_end_interview():
         )
     except:
         pass
-# Handle manual end or session end
-if st.session_state.get("interview_complete", False) or session_ended:
+# Handle manual end
+if st.session_state.get("interview_complete", False):
     if st.session_state.interview_active:
         st.session_state.interview_active = False
         _call_end_interview()
@@ -173,10 +183,19 @@ st.progress(
 )
 
 # CHAT MESSAGES
-for msg in st.session_state.messages:
+for i, msg in enumerate(st.session_state.messages):
     avatar = "assets/lisa_avatar.png" if msg["role"] == "assistant" else "👤"
     with st.chat_message(msg["role"], avatar=avatar):
-        st.write(msg["content"])
+        if i == len(st.session_state.messages) - 1 and msg["role"] == "assistant" and st.session_state.get("animate_last", False):
+            def stream_data():
+                import time
+                for word in msg["content"].split():
+                    yield word + " "
+                    time.sleep(0.04)
+            st.write_stream(stream_data)
+            st.session_state.animate_last = False
+        else:
+            st.write(msg["content"])
 
 # INPUT AREA (only if interview_active is True)
 if st.session_state.interview_active:
@@ -269,6 +288,7 @@ if st.session_state.interview_active:
                         "role": "assistant",
                         "content": data["next_ai_message"]
                     })
+                    st.session_state.animate_last = True
                     st.session_state.audio_to_play = data["next_ai_message"]
                 
                 if data.get("interview_complete"):
