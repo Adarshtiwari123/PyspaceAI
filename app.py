@@ -56,10 +56,7 @@ try:
         
     if res_data.get("status") == "ended":
         st.warning("This interview has already been completed.")
-        st.markdown("""
-        <meta http-equiv="refresh" content="3;
-        url=https://interviewflow-suite-one.vercel.app/analytics">
-        """, unsafe_allow_html=True)
+        st.markdown('<meta http-equiv="refresh" content="3; url=https://interviewflow-suite-one.vercel.app/analytics">', unsafe_allow_html=True)
         st.success("✅ Redirecting to your results...")
         st.stop()
 
@@ -187,6 +184,11 @@ for i, msg in enumerate(st.session_state.messages):
     avatar = "assets/lisa_avatar.png" if msg["role"] == "assistant" else "👤"
     with st.chat_message(msg["role"], avatar=avatar):
         if i == len(st.session_state.messages) - 1 and msg["role"] == "assistant" and st.session_state.get("animate_last", False):
+            # Play audio immediately before streaming text so they sync up
+            if st.session_state.get("audio_to_play"):
+                speak(st.session_state.audio_to_play)
+                st.session_state.audio_to_play = None
+
             def stream_data():
                 import time
                 for word in msg["content"].split():
@@ -201,17 +203,19 @@ for i, msg in enumerate(st.session_state.messages):
 if st.session_state.interview_active:
     # Callbacks for clearing inputs (avoids StreamlitAPIException)
     def on_send():
-        st.session_state.submit_clicked = True
-        st.session_state.user_message = st.session_state.get("answer_input", "")
-        st.session_state.answer_input = ""  # Allowed in callback
-        st.session_state.last_transcribed = ""
+        val = st.session_state.get("answer_input", "").strip()
+        if val:
+            st.session_state.submit_clicked = True
+            st.session_state.user_message = val
+            st.session_state.answer_input = ""
+            st.session_state.last_transcribed = ""
 
     def on_skip():
         st.session_state.skip_clicked = True
         st.session_state.answer_input = ""
         st.session_state.last_transcribed = ""
 
-    # Process voice input from state (before rendering text_input to avoid exception)
+    # Process voice input from state
     if "voice_mic" in st.session_state and st.session_state.voice_mic:
         audio_bytes = st.session_state.voice_mic
         # Only transcribe if it's a new recording
@@ -227,22 +231,18 @@ if st.session_state.interview_active:
         st.audio_input("Record Answer", key="voice_mic", label_visibility="collapsed")
         
     # Input box and buttons below
-    col_input, col_actions = st.columns([7, 3])
+    col_input, col_actions = st.columns([8, 2])
     with col_input:
-        st.text_input(
+        st.text_area(
             "Type your answer or use voice...", 
             key="answer_input",
             label_visibility="collapsed",
-            on_change=on_send
+            height=100
         )
         
     with col_actions:
-        col_skip, col_send = st.columns([1, 2])
-        with col_skip:
-            st.button("⏭️", on_click=on_skip, key="btn_skip")
-            
-        with col_send:
-            st.button("Send", type="primary", on_click=on_send, key="btn_send")
+        st.button("Send", type="primary", on_click=on_send, key="btn_send", use_container_width=True)
+        st.button("⏭️ Skip", on_click=on_skip, key="btn_skip", use_container_width=True)
 
     # STEP 4: HANDLE ANSWER SUBMISSION
     send_clicked = st.session_state.get("submit_clicked", False)
@@ -254,7 +254,7 @@ if st.session_state.interview_active:
         st.session_state.skip_clicked = False
         
         user_input = st.session_state.get("user_message", "") if send_clicked else ""
-        answer_text = user_input if user_input else ""
+        answer_text = user_input.strip() if user_input else ""
         is_skipped = True if skip_clicked else False
 
         if not is_skipped:
@@ -278,25 +278,33 @@ if st.session_state.interview_active:
                     headers={"Authorization": f"Bearer {st.session_state.token}"},
                     timeout=30
                 )
-                data = res.json()
                 
-                st.session_state.conversation_history = data["conversation_history"]
-                st.session_state.current_question_number = data["question_number"]
-                
-                if data.get("next_ai_message"):
-                    st.session_state.messages.append({
-                        "role": "assistant",
-                        "content": data["next_ai_message"]
-                    })
-                    st.session_state.animate_last = True
-                    st.session_state.audio_to_play = data["next_ai_message"]
-                
-                if data.get("interview_complete"):
-                    st.session_state.interview_active = False
-                    _call_end_interview()
+                if res.status_code == 200:
+                    data = res.json()
+                    
+                    st.session_state.conversation_history = data.get("conversation_history", st.session_state.conversation_history)
+                    st.session_state.current_question_number = data.get("question_number", st.session_state.current_question_number)
+                    
+                    if data.get("next_ai_message"):
+                        st.session_state.messages.append({
+                            "role": "assistant",
+                            "content": data["next_ai_message"]
+                        })
+                        st.session_state.animate_last = True
+                        st.session_state.audio_to_play = data["next_ai_message"]
+                    
+                    if data.get("interview_complete"):
+                        st.session_state.interview_active = False
+                        _call_end_interview()
+                else:
+                    st.error(f"API Error: {res.status_code} - {res.text}")
+                    if not is_skipped:
+                        st.session_state.messages.pop() # Remove user message so they can retry
                     
             except Exception as e:
                 st.error(f"Connection error: {str(e)}")
+                if not is_skipped:
+                    st.session_state.messages.pop() # Remove user message so they can retry
 
         st.rerun()
 
@@ -308,13 +316,7 @@ if remaining <= 0 and st.session_state.interview_active:
 
 # STEP 7: INTERVIEW COMPLETE SCREEN
 if not st.session_state.interview_active:
-    st.markdown("""
-    <meta http-equiv="refresh" content="3;
-    url=https://interviewflow-suite-one.vercel.app/analytics">
-    """, unsafe_allow_html=True)
+    st.markdown('<meta http-equiv="refresh" content="3; url=https://interviewflow-suite-one.vercel.app/analytics">', unsafe_allow_html=True)
     st.success("✅ Interview complete! Redirecting to your results...")
 
-# STEP 8: PLAY AUDIO FOR LATEST MESSAGE (ensure this runs after UI renders)
-if st.session_state.get("audio_to_play"):
-    speak(st.session_state.audio_to_play)
-    st.session_state.audio_to_play = None
+
