@@ -3,8 +3,9 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-#BACKEND_URL = "https://productionai1.onrender.com"
-BACKEND_URL = "http://localhost:8000"
+# Fallback to the production URL if the environment variable isn't set.
+# If testing locally, you can set BACKEND_URL="http://localhost:8000" in your .env file
+BACKEND_URL = os.getenv("BACKEND_URL", "https://productionai1.onrender.com")
 
 # OLD - OpenAI (cost reason) (Keep for TTS if needed)
 # OPENAI_API_KEY = os.getenv("OPENAI_API_KEY") 
