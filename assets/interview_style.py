@@ -250,8 +250,18 @@ def inject_interview_styles(is_dark: bool = True):
     [data-testid="stProgressBar"] { display: none !important; }
     [data-testid="stMetric"] { display: none !important; }
 
+    /* Make the main container a full-height flex column so header and footer can stick */
+    [data-testid="block-container"], .main .block-container {
+        display: flex !important;
+        flex-direction: column !important;
+        min-height: 100vh !important;
+    }
+    
     /* Target the container wrapping the header */
     [data-testid="stVerticalBlock"]:has(.custom-header-target) {
+        position: sticky !important;
+        top: 0 !important;
+        z-index: 9999 !important;
         background-color: var(--header-bg) !important;
         border-radius: 12px;
         border: 1px solid var(--border-color);
@@ -435,21 +445,19 @@ def inject_interview_styles(is_dark: bool = True):
 
     /* INPUT BOX AND CHAT CONTAINER AREA */
     [data-testid="stVerticalBlock"]:has(.fixed-bottom-input) {
-        position: fixed !important;
+        position: sticky !important;
         bottom: 0 !important;
-        left: 0 !important;
-        right: 0 !important;
-        margin: 0 !important;
-        width: 100% !important;
-        max-width: 100% !important;
+        margin-top: auto !important; /* Pushes the input to the bottom of the screen if chat is short */
         background-color: var(--page-bg) !important;
         z-index: 9999 !important;
-        padding: 10px 5rem 20px 5rem !important; /* Align with Streamlit's wide mode padding */
+        padding-top: 20px !important;
+        padding-bottom: 20px !important;
+        border-top: 1px solid var(--border-color) !important; /* Clean separation from chat */
     }
     
     /* Ensure the main chat window doesn't hide behind the fixed bottom bar */
     .main .block-container {
-        padding-bottom: 120px !important;
+        padding-bottom: 20px !important;
     }
     
     /* Make st.audio_input smaller and sleeker */
