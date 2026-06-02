@@ -1,6 +1,6 @@
 """
-Sarvam AI TTS — bulbul:v3
-Replaces browser Web Speech API with Sarvam's Indian-language voice.
+Deepgram TTS — Aura-2
+Replaces browser Web Speech API with Deepgram's Ophelia voice.
 Plays audio inline via HTML5 <audio autoplay>.
 """
 import os
@@ -10,15 +10,12 @@ import streamlit as st
 import streamlit.components.v1 as components
 from dotenv import load_dotenv
 
-load_dotenv()
+TTS_URL = "https://api.deepgram.com/v1/speak?model=aura-2-ophelia-en"
 
-SARVAM_KEY = os.getenv("SARVAM_AI") or os.getenv("SARVAM_API_KEY", "")
-TTS_URL    = "https://api.sarvam.ai/text-to-speech"
-
-# ── Default voice settings (can override per call) ───────────────────────────
-DEFAULT_SPEAKER  = "ratan"  # male voice requested by user
-DEFAULT_LANGUAGE = "en-IN"    # switch to "hi-IN" for Hindi
-DEFAULT_PACE     = 0.95
+# We use the defaults from the original implementation but ignore them for Deepgram
+DEFAULT_SPEAKER  = "aura-2-ophelia-en"  
+DEFAULT_LANGUAGE = "en-IN"    
+DEFAULT_PACE     = 1.0
 
 
 def speak(
@@ -28,19 +25,22 @@ def speak(
     pace: float   = DEFAULT_PACE,
 ) -> None:
     """
-    Convert text to speech using Sarvam bulbul:v3.
+    Convert text to speech using Deepgram Aura-2.
     Plays audio automatically in the browser.
-    Falls back to browser Web Speech API if Sarvam key is missing.
+    Falls back to browser Web Speech API if Deepgram key is missing or fails.
     """
     if not text or not text.strip():
         return
 
-    if not SARVAM_KEY:
+    load_dotenv(override=True)
+    api_key = os.getenv("DEEPGRAM_API_KEY", "").strip()
+
+    if not api_key:
         # Graceful fallback — browser TTS (same as old behaviour)
         _browser_speak(text)
         return
 
-    audio_bytes = _sarvam_tts(text.strip(), language, speaker, pace)
+    audio_bytes = _deepgram_tts(text.strip(), api_key)
     if audio_bytes:
         _play_audio(audio_bytes)
     else:
@@ -52,95 +52,32 @@ def speak(
 # INTERNAL HELPERS
 # ════════════════════════════════════════════════════════════════
 
-def _sarvam_tts(text: str, language: str, speaker: str, pace: float) -> bytes | None:
+def _deepgram_tts(text: str, api_key: str) -> bytes | None:
     """
-    Call Sarvam /text-to-speech.
-    Returns raw WAV bytes or None on failure.
-    Max 2500 chars per request — longer text is split automatically.
+    Call Deepgram /speak API.
+    Returns raw MP3 bytes or None on failure.
     """
-    import wave
-    import io
-
-    # Split long text into chunks of 2400 chars on sentence boundaries
-    chunks = _split_text(text, max_len=2400)
-    audio_chunks = []
-
-    for chunk in chunks:
-        payload = {
-            "inputs":               [chunk],
-            "target_language_code": language,
-            "speaker":              speaker,
-            "model":                "bulbul:v3",
-            "enable_preprocessing": True,   # handles Hinglish / mixed script
-            "pace":                 pace,
-        }
-        try:
-            resp = requests.post(
-                TTS_URL,
-                headers={"api-subscription-key": SARVAM_KEY},
-                json=payload,
-                timeout=20,
-            )
-            resp.raise_for_status()
-            audios = resp.json().get("audios", [])
-            if audios:
-                audio_chunks.append(base64.b64decode(audios[0]))
-        except requests.exceptions.HTTPError as e:
-            st.warning(f"[Sarvam TTS] HTTP {e.response.status_code}: {e.response.text[:200]}")
-            return None
-        except Exception as e:
-            st.warning(f"[Sarvam TTS] Error: {e}")
-            return None
-
-    if not audio_chunks:
-        return None
-        
-    if len(audio_chunks) == 1:
-        return audio_chunks[0]
-
-    # Properly concatenate multiple WAV files
+    payload = {
+        "text": text
+    }
     try:
-        data = []
-        with wave.open(io.BytesIO(audio_chunks[0]), 'rb') as w:
-            params = w.getparams()
-            data.append(w.readframes(w.getnframes()))
-        for chunk in audio_chunks[1:]:
-            with wave.open(io.BytesIO(chunk), 'rb') as w:
-                data.append(w.readframes(w.getnframes()))
-                
-        out_io = io.BytesIO()
-        with wave.open(out_io, 'wb') as w:
-            w.setparams(params)
-            for d in data:
-                w.writeframes(d)
-        return out_io.getvalue()
+        resp = requests.post(
+            TTS_URL,
+            headers={
+                "Authorization": f"Token {api_key}",
+                "Content-Type": "application/json"
+            },
+            json=payload,
+            timeout=20,
+        )
+        resp.raise_for_status()
+        return resp.content
+    except requests.exceptions.HTTPError as e:
+        st.warning(f"[Deepgram TTS] HTTP {e.response.status_code}: {e.response.text[:200]}")
+        return None
     except Exception as e:
-        print("WAV concat error:", e)
-        # Fallback to just the first chunk if concatenation fails
-        return audio_chunks[0]
-
-
-def _split_text(text: str, max_len: int = 2400) -> list[str]:
-    """Split text into chunks ≤ max_len chars, breaking on sentence ends."""
-    if len(text) <= max_len:
-        return [text]
-
-    chunks, current = [], ""
-    for sentence in text.replace("। ", ".\n").split(". "):
-        sentence = sentence.strip()
-        if not sentence:
-            continue
-        candidate = current + (". " if current else "") + sentence
-        if len(candidate) <= max_len:
-            current = candidate
-        else:
-            if current:
-                chunks.append(current)
-            current = sentence
-
-    if current:
-        chunks.append(current)
-    return chunks or [text[:max_len]]
+        st.warning(f"[Deepgram TTS] Error: {e}")
+        return None
 
 
 def _play_audio(audio_bytes: bytes) -> None:
@@ -149,7 +86,7 @@ def _play_audio(audio_bytes: bytes) -> None:
     components.html(
         f"""
         <audio autoplay style="display:none;">
-            <source src="data:audio/wav;base64,{b64}" type="audio/wav">
+            <source src="data:audio/mp3;base64,{b64}" type="audio/mpeg">
         </audio>
         """,
         height=1,

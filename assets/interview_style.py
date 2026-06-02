@@ -3,35 +3,8 @@ from datetime import datetime
 
 LISA_AVATAR_PATH = "assets/lisa_avatar.png"
 
-STAGE_LABELS_CLEAN = {
-    "easy":     "Introductory",
-    "medium":   "Intermediate",
-    "hard":     "Advanced",
-    "adaptive": "Follow-up",
-}
-
-STAGE_BADGE_COLORS = {
-    "easy":     "#10b981",
-    "medium":   "#f59e0b",
-    "hard":     "#ef4444",
-    "adaptive": "#6366f1",
-}
-
-
 def now_time() -> str:
     return datetime.now().strftime("%I:%M %p")
-
-
-def stage_badge(level: str) -> str:
-    label = STAGE_LABELS_CLEAN.get(level, level.title())
-    color = STAGE_BADGE_COLORS.get(level, "#6b7280")
-    return (
-        f'<span style="display:inline-block;font-size:10px;font-weight:700;'
-        f'letter-spacing:1px;text-transform:uppercase;padding:2px 10px;'
-        f'border-radius:20px;margin-left:8px;background:{color}22;'
-        f'color:{color};border:1px solid {color}55;">{label}</span>'
-    )
-
 
 def strip_emojis(text: str) -> str:
     import re
@@ -44,18 +17,17 @@ def strip_emojis(text: str) -> str:
         text = str(text) if text is not None else ""
     return pattern.sub("", text).strip()
 
-
 def show_typing_indicator():
     st.markdown("""
     <div style="display:flex;align-items:center;gap:8px;padding:6px 0;">
-        <span style="font-size:11px;color:#10b981;font-weight:700;
+        <span style="font-size:11px;color:var(--btn-send-bg);font-weight:700;
                      letter-spacing:0.5px;">LISA is thinking</span>
         <div style="display:flex;gap:5px;align-items:center;">
-            <span style="width:7px;height:7px;background:#10b981;border-radius:50%;
+            <span style="width:7px;height:7px;background:var(--btn-send-bg);border-radius:50%;
                 display:inline-block;animation:tb 1.2s infinite 0s;"></span>
-            <span style="width:7px;height:7px;background:#10b981;border-radius:50%;
+            <span style="width:7px;height:7px;background:var(--btn-send-bg);border-radius:50%;
                 display:inline-block;animation:tb 1.2s infinite 0.2s;"></span>
-            <span style="width:7px;height:7px;background:#10b981;border-radius:50%;
+            <span style="width:7px;height:7px;background:var(--btn-send-bg);border-radius:50%;
                 display:inline-block;animation:tb 1.2s infinite 0.4s;"></span>
         </div>
     </div>
@@ -67,389 +39,407 @@ def show_typing_indicator():
     </style>
     """, unsafe_allow_html=True)
 
-
-# ─────────────────────────────────────────────
-# INTERVIEW HEADER BAR (rendered inside the chat box)
-# ─────────────────────────────────────────────
 def render_interview_header(title: str, q_num: int, total_q: int,
-                            level: str, timer_str: str, remaining: int):
-    """Compact header bar matching reference UI — green icon, title, timer, end button."""
-    badge = stage_badge(level)
+                            level: str, timer_str: str, remaining: int, user_name: str):
     
-    with st.container(border=True):
-        col1, col2, col3 = st.columns([4, 1.5, 1])
-        with col1:
+    progress_pct = (q_num / total_q) * 100
+    
+    # Segmented dots
+    dots_html = ""
+    for i in range(1, total_q + 1):
+        if i <= q_num:
+            dots_html += '<div class="seg active"></div>'
+        else:
+            dots_html += '<div class="seg"></div>'
+            
+    with st.container():
+        st.markdown('<div class="custom-header-target"></div>', unsafe_allow_html=True)
+        
+        # STATUS ROW
+        st.markdown("""
+        <div class="header-status-row">
+           <span class="active-status"><span class="pulse-dot green"></span> INTERVIEW SESSION ACTIVE</span>
+           <span class="recording-status"><span class="pulse-dot red"></span> Session recording</span>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # MAIN ROW
+        c1, c2, c3, c4 = st.columns([4, 1.5, 1.5, 1.5])
+        with c1:
             st.markdown(f"""
-            <div style="display:flex;align-items:center;gap:12px;">
-                <div style="width:36px;height:36px;border-radius:10px;
-                            background:linear-gradient(135deg,#10b981,#059669);
-                            display:flex;align-items:center;justify-content:center;
-                            font-size:18px;">🎯</div>
-                <div>
-                    <div style="color:#e2e8f0;font-size:15px;font-weight:700;
-                                line-height:1.3;">{title}</div>
-                    <div style="color:#64748b;font-size:12px;">
-                        Question {q_num} of {total_q} {badge}
-                    </div>
-                </div>
-            </div>
+               <div class="header-profile">
+                   <div class="avatar-circle-main">💼</div>
+                   <div class="profile-info">
+                       <div class="job-title">{title}</div>
+                       <div class="sub-info">
+                           <span>AI Interviewer — LISA</span>
+                           <span class="badge-amber">{level.title()}</span>
+                           <span class="badge-green"><span class="pulse-dot green" style="width:6px;height:6px;"></span> Live</span>
+                       </div>
+                   </div>
+               </div>
             """, unsafe_allow_html=True)
-        with col2:
+        with c2:
             st.markdown(f"""
-            <div style="display:flex;align-items:center;gap:6px;
-                        background:#1a1f2e;border:1px solid #2d3548;
-                        border-radius:8px;padding:6px 12px;width:fit-content;margin-top:4px;">
-                <span style="color:#64748b;font-size:13px;">⏱</span>
-                <span id="countdown_timer" style="color:#e2e8f0;font-size:14px;font-weight:600;
-                             font-family:monospace;">{timer_str}</span>
-            </div>
-            <script>
-                var timeLeft = {remaining};
-                var timerSpan = document.getElementById('countdown_timer');
-                var interval = setInterval(function() {{
-                    if (timeLeft <= 0) {{
-                        clearInterval(interval);
-                        timerSpan.innerHTML = "00:00";
+               <div class="header-timer">
+                   <div class="timer-label">TIME LEFT</div>
+                   <div class="timer-value" id="countdown_timer">{timer_str}</div>
+               </div>
+            """, unsafe_allow_html=True)
+        with c3:
+            st.markdown(f"""
+               <div class="candidate-info">
+                   <div class="candidate-name">{user_name}</div>
+                   <div class="candidate-role">Candidate</div>
+               </div>
+            """, unsafe_allow_html=True)
+        with c4:
+            st.button("End interview", key="end_btn_header", use_container_width=True)
+            
+        # JS for Timer
+        st.markdown(f"""
+        <script>
+            var timeLeft = {remaining};
+            var timerSpan = document.getElementById('countdown_timer');
+            var interval = setInterval(function() {{
+                if (timeLeft <= 0) {{
+                    clearInterval(interval);
+                    timerSpan.innerHTML = "00:00";
+                }} else {{
+                    timeLeft--;
+                    var minutes = Math.floor(timeLeft / 60);
+                    var seconds = timeLeft % 60;
+                    timerSpan.innerHTML = (minutes < 10 ? "0" : "") + minutes + ":" + (seconds < 10 ? "0" : "") + seconds;
+                    
+                    if (timeLeft < 60) {{
+                        timerSpan.style.color = "#E24B4A";
+                    }} else if (timeLeft < 120) {{
+                        timerSpan.style.color = "#EF9F27";
                     }} else {{
-                        timeLeft--;
-                        var minutes = Math.floor(timeLeft / 60);
-                        var seconds = timeLeft % 60;
-                        timerSpan.innerHTML = (minutes < 10 ? "0" : "") + minutes + ":" + (seconds < 10 ? "0" : "") + seconds;
+                        timerSpan.style.color = "var(--timer-text)";
                     }}
-                }}, 1000);
-            </script>
-            """, unsafe_allow_html=True)
-        with col3:
-            if st.button("🔴 End", type="secondary", key="end_btn_header"):
-                st.session_state.interview_complete = True
-                st.rerun()
+                }}
+            }}, 1000);
+        </script>
+        """, unsafe_allow_html=True)
+            
+        # PROGRESS ROW
+        st.markdown(f"""
+        <div class="header-progress-row">
+           <div class="progress-labels-row">
+               <span class="progress-title">Question progress</span>
+               <div class="progress-dots">
+                   {dots_html}
+               </div>
+           </div>
+           <div class="progress-bar-container">
+               <span class="q-label">Q {q_num} of {total_q}</span>
+               <div class="progress-track-long">
+                   <div class="progress-fill-long" style="width:{progress_pct}%"></div>
+               </div>
+               <span class="pct-label">{int(progress_pct)}%</span>
+           </div>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # FOOTER ROW
+        st.markdown("""
+        <div class="header-footer-row">
+           <span>🎤 Voice active</span>
+           <span>📄 Resume loaded</span>
+           <span>📊 Score tracked</span>
+        </div>
+        """, unsafe_allow_html=True)
 
+def inject_interview_styles(is_dark: bool = True):
+    if is_dark:
+        theme_css = """
+        :root {
+          --page-bg: #0f1117;
+          --header-bg: #161922;
+          --chat-bg: #0f1117;
+          --ai-bubble-bg: #161f1c;
+          --ai-bubble-border: #0F6E56;
+          --ai-bubble-text: #c8ede4;
+          --user-bubble-bg: #1a1d2e;
+          --user-bubble-border: #2a2d3a;
+          --user-bubble-text: #b8bdd4;
+          --input-bg: #1e2130;
+          --input-border: #2a2d3a;
+          --btn-skip-border: #2a2d3a;
+          --btn-skip-text: #8b8fa8;
+          --btn-end-bg: #1a1d2e;
+          --btn-end-text: #2a2d3a;
+          --btn-end-border: #2a2d3a;
+          --prog-track: #1e2130;
+          --prog-fill: #1D9E75;
+          --ai-avatar-bg: #0F6E56;
+          --ai-avatar-border: transparent;
+          --ai-avatar-icon: #9FE1CB;
+          --user-avatar-bg: #1e2130;
+          --user-avatar-border: #2a2d3a;
+          --user-avatar-icon: #8b8fa8;
+          --diff-bg: #2a1f0e;
+          --diff-text: #EF9F27;
+          --timer-bg: transparent;
+          --timer-border: transparent;
+          --timer-text: #00ff9d;
+          --btn-send-bg: #1D9E75;
+          --btn-send-text: #ffffff;
+          --btn-skip-bg: transparent;
+          --header-text-muted: #8b8fa8;
+          --header-text-main: #ffffff;
+        }
+        """
+    else:
+        theme_css = """
+        :root {
+          --page-bg: #f4f6fa;
+          --header-bg: #ffffff;
+          --chat-bg: #f4f6fa;
+          --ai-bubble-bg: #ffffff;
+          --ai-bubble-border: #c0e8d8;
+          --ai-bubble-text: #2d3550;
+          --user-bubble-bg: #EEEDFE;
+          --user-bubble-border: #AFA9EC;
+          --user-bubble-text: #3C3489;
+          --input-bg: #f4f6fa;
+          --input-border: #dde1ec;
+          --btn-skip-border: #dde1ec;
+          --btn-skip-text: #8b8fa8;
+          --btn-end-bg: #f4f6fa;
+          --btn-end-text: #dde1ec;
+          --btn-end-border: #dde1ec;
+          --prog-track: #e8ecf5;
+          --prog-fill: #1D9E75;
+          --ai-avatar-bg: #E1F5EE;
+          --ai-avatar-border: #9FE1CB;
+          --ai-avatar-icon: #0F6E56;
+          --user-avatar-bg: #eef0f8;
+          --user-avatar-border: #dde1ec;
+          --user-avatar-icon: #534AB7;
+          --diff-bg: #fef3e2;
+          --diff-text: #854F0B;
+          --timer-bg: transparent;
+          --timer-border: transparent;
+          --timer-text: #1D9E75;
+          --btn-send-bg: #1D9E75;
+          --btn-send-text: #ffffff;
+          --btn-skip-bg: transparent;
+          --header-text-muted: #64748b;
+          --header-text-main: #0f172a;
+        }
+        """
 
-def inject_interview_styles():
     st.markdown("""
     <style>
+    /* CSS VARIABLES FOR LIGHT AND DARK MODE */
+    """ + theme_css + """
 
-    /* ══════════════════════════════════════════
-       GLOBAL — dark charcoal base (matches reference)
-    ══════════════════════════════════════════ */
-    .stApp,
-    [data-testid="stAppViewContainer"],
-    [data-testid="stMain"],
-    [data-testid="stBottomBlockContainer"],
-    section.main,
-    .main .block-container {
-        background-color: #141824 !important;
+    /* GLOBAL BACKGROUNDS */
+    .stApp, [data-testid="stAppViewContainer"], [data-testid="stMain"], section.main {
+        background-color: var(--page-bg) !important;
     }
     .stHeader, header { display: none !important; }
-    #MainMenu, footer  { visibility: hidden !important; }
 
-    /* Tighter padding — no excessive scroll */
-    .main .block-container {
-        padding-top: 1rem !important;
-        padding-bottom: 0 !important;
-        max-width: 960px !important;
-    }
-
-    /* Default text colour */
-    .stApp p, .stApp span, .stApp div,
-    .stApp label, .stMarkdown {
-        color: #cbd5e1 !important;
-    }
-
-    /* ══════════════════════════════════════════
-       SCROLLBAR — subtle teal
-    ══════════════════════════════════════════ */
-    ::-webkit-scrollbar { width: 4px; }
-    ::-webkit-scrollbar-track { background: #141824; }
-    ::-webkit-scrollbar-thumb {
-        background: #2d3548;
-        border-radius: 4px;
-    }
-    ::-webkit-scrollbar-thumb:hover { background: #10b981; }
-
-    /* ══════════════════════════════════════════
-       PROGRESS BAR — hidden (we use header bar instead)
-    ══════════════════════════════════════════ */
+    /* HIDE DEFAULT PROGRESS & METRICS */
     [data-testid="stProgressBar"] { display: none !important; }
-
-    /* ══════════════════════════════════════════
-       METRICS — hidden (moved into header bar)
-    ══════════════════════════════════════════ */
     [data-testid="stMetric"] { display: none !important; }
 
-    /* ══════════════════════════════════════════
-       DIVIDER — subtle
-    ══════════════════════════════════════════ */
-    hr { border-color: #2d3548 !important; opacity: 0.5 !important; }
+    /* ==================================================
+       HEADER STYLING (Image 3 exact replica)
+       ================================================== */
+    /* Target the container wrapping the header */
+    [data-testid="stVerticalBlock"]:has(.custom-header-target) {
+        background-color: var(--header-bg) !important;
+        border-radius: 12px;
+        border: 1px solid var(--input-border);
+        padding: 20px 24px !important;
+        margin-bottom: 24px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    }
+    /* Remove streamlit's default vertical gaps inside the header container */
+    [data-testid="stVerticalBlock"]:has(.custom-header-target) > div > div {
+        gap: 0 !important;
+        padding-top: 0 !important;
+        padding-bottom: 0 !important;
+    }
+    [data-testid="stVerticalBlock"]:has(.custom-header-target) p {
+        margin-bottom: 0 !important;
+    }
+    
+    .pulse-dot {
+        display: inline-block;
+        width: 8px; height: 8px;
+        border-radius: 50%;
+        margin-right: 6px;
+    }
+    .pulse-dot.green { background-color: #1D9E75; box-shadow: 0 0 6px #1D9E75; }
+    .pulse-dot.red { background-color: #E24B4A; box-shadow: 0 0 6px #E24B4A; }
+    
+    .header-status-row {
+        display: flex; justify-content: space-between;
+        font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;
+        color: var(--header-text-muted);
+        margin-bottom: 24px;
+        border-bottom: 1px solid var(--input-border);
+        padding-bottom: 12px;
+    }
+    
+    .header-profile { display: flex; align-items: center; gap: 16px; }
+    .avatar-circle-main {
+        width: 48px; height: 48px; border-radius: 50%;
+        background-color: var(--btn-send-bg); color: white;
+        display: flex; align-items: center; justify-content: center; font-size: 24px;
+        border: 2px solid var(--header-bg); outline: 2px solid var(--btn-send-bg);
+    }
+    .profile-info .job-title { font-size: 20px; font-weight: 600; color: var(--header-text-main); margin-bottom: 4px; }
+    .profile-info .sub-info { font-size: 13px; color: var(--header-text-muted); display: flex; gap: 12px; align-items: center; }
+    
+    .badge-amber { background: var(--diff-bg); color: var(--diff-text); padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+    .badge-green { background: transparent; color: #1D9E75; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; border: 1px solid #1D9E75; }
+    
+    .header-timer { text-align: left; }
+    .timer-label { font-size: 11px; font-weight: 600; color: var(--header-text-muted); letter-spacing: 1px; margin-bottom: 4px; }
+    .timer-value { font-size: 28px; font-weight: 600; color: var(--timer-text); font-family: monospace; letter-spacing: 2px; line-height: 1; }
+    
+    .candidate-info { border-left: 1px solid var(--input-border); padding-left: 20px; text-align: left; }
+    .candidate-name { font-size: 16px; font-weight: 600; color: var(--header-text-main); }
+    .candidate-role { font-size: 13px; color: var(--header-text-muted); }
+    
+    .header-progress-row { margin-top: 24px; }
+    .progress-labels-row { display: flex; justify-content: space-between; margin-bottom: 8px; align-items: center; }
+    .progress-title { font-size: 13px; color: var(--header-text-muted); }
+    .progress-dots { display: flex; gap: 6px; }
+    .progress-dots .seg { width: 32px; height: 4px; background: var(--prog-track); border-radius: 4px; }
+    .progress-dots .seg.active { background: var(--prog-fill); }
+    
+    .progress-bar-container { display: flex; align-items: center; gap: 16px; }
+    .q-label { font-size: 13px; color: var(--header-text-muted); white-space: nowrap; }
+    .progress-track-long { flex-grow: 1; height: 4px; background: var(--prog-track); border-radius: 4px; overflow: hidden; }
+    .progress-fill-long { height: 100%; background: var(--prog-fill); transition: width 0.3s ease; }
+    .pct-label { font-size: 13px; font-weight: 600; color: var(--prog-fill); white-space: nowrap; }
+    
+    .header-footer-row {
+        display: flex; gap: 24px; font-size: 12px; color: var(--header-text-muted);
+        margin-top: 20px; padding-top: 12px; border-top: 1px solid var(--input-border);
+    }
 
-    /* ══════════════════════════════════════════
-       BUTTONS
-    ══════════════════════════════════════════ */
+    /* BUTTONS */
     .stButton > button {
-        background: #1a1f2e !important;
-        border: 1px solid #2d3548 !important;
-        color: #cbd5e1 !important;
+        background: var(--btn-skip-bg) !important;
+        border: 1px solid var(--btn-skip-border) !important;
+        color: var(--btn-skip-text) !important;
         border-radius: 10px !important;
         transition: all 0.2s !important;
-        font-size: 13px !important;
-    }
-    .stButton > button:hover {
-        border-color: #10b981 !important;
-        color: #10b981 !important;
-        box-shadow: 0 0 12px rgba(16,185,129,0.15) !important;
     }
     .stButton > button[kind="primary"] {
-        background: linear-gradient(135deg,#10b981,#059669) !important;
+        background: var(--btn-send-bg) !important;
         border: none !important;
-        color: #fff !important;
-        font-weight: 700 !important;
-        box-shadow: 0 4px 20px rgba(16,185,129,0.3) !important;
+        color: var(--btn-send-text) !important;
+        border-radius: 10px !important;
     }
-    .stButton > button[kind="primary"]:hover {
-        background: linear-gradient(135deg,#34d399,#10b981) !important;
-        box-shadow: 0 4px 24px rgba(16,185,129,0.45) !important;
-    }
-
-    /* End Interview button — red accent */
-    .stButton > button[kind="secondary"] {
-        background: rgba(239,68,68,0.1) !important;
-        border: 1px solid #ef4444 !important;
-        color: #ef4444 !important;
-        font-weight: 600 !important;
-        font-size: 12px !important;
-        padding: 4px 14px !important;
-    }
-    .stButton > button[kind="secondary"]:hover {
-        background: #ef4444 !important;
-        color: #fff !important;
+    
+    /* End Interview Button styling matching the image (dark/faded) */
+    button:contains("End") {
+        background: var(--btn-end-bg) !important;
+        border: 1px solid var(--btn-end-border) !important;
+        color: var(--btn-end-text) !important;
+        border-radius: 8px !important;
+        padding: 8px 16px !important;
+        font-weight: 500 !important;
+        height: auto !important;
     }
 
-    /* ══════════════════════════════════════════
-       SPINNER
-    ══════════════════════════════════════════ */
-    [data-testid="stSpinner"] div {
-        border-top-color: #10b981 !important;
+    /* ==================================================
+       CHAT MESSAGE RENDERING FIXES
+       ================================================== */
+       
+    /* Remove any default Streamlit chat backgrounds */
+    [data-testid="stChatMessage"] {
+        background-color: transparent !important;
     }
-
-    /* ══════════════════════════════════════════
-       ALERTS
-    ══════════════════════════════════════════ */
-    [data-testid="stAlert"] {
-        border-radius: 12px !important;
-        border-left-width: 3px !important;
-    }
-
-    /* ══════════════════════════════════════════
-       LISA BUBBLE — left side, teal-tinted dark card
-    ══════════════════════════════════════════ */
-    [data-testid="stChatMessage"]:has([data-testid="chatAvatarIcon-assistant"])
-    [data-testid="stChatMessageContent"] {
-        background: #1e2a3a !important;
-        border: 1px solid #2d3e50 !important;
-        border-radius: 4px 14px 14px 14px !important;
+       
+    /* 1. AI MESSAGE BUBBLE (Left Aligned) */
+    [data-testid="stChatMessage"]:has(.chat-role-assistant) [data-testid="stChatMessageContent"] {
+        background: var(--ai-bubble-bg) !important;
+        border: 0.5px solid var(--ai-bubble-border) !important;
+        border-radius: 0 12px 12px 12px !important;
         padding: 16px 20px !important;
-        max-width: 82% !important;
+        max-width: 85% !important;
         margin-right: auto !important;
         margin-left: 0 !important;
-        box-shadow: 0 2px 12px rgba(0,0,0,0.2) !important;
+        color: var(--ai-bubble-text) !important;
+        box-shadow: none !important;
     }
-    /* LISA text */
-    [data-testid="stChatMessage"]:has([data-testid="chatAvatarIcon-assistant"])
-    [data-testid="stChatMessageContent"] p,
-    [data-testid="stChatMessage"]:has([data-testid="chatAvatarIcon-assistant"])
-    [data-testid="stChatMessageContent"] span,
-    [data-testid="stChatMessage"]:has([data-testid="chatAvatarIcon-assistant"])
-    [data-testid="stChatMessageContent"] div {
-        color: #e2e8f0 !important;
-        font-size: 14px !important;
-        line-height: 1.7 !important;
+    [data-testid="stChatMessage"]:has(.chat-role-assistant) p {
+        color: var(--ai-bubble-text) !important;
     }
-    /* Hide LISA audio player — voice plays via JS */
-    [data-testid="stChatMessage"]:has([data-testid="chatAvatarIcon-assistant"])
-    [data-testid="stAudio"],
-    [data-testid="stChatMessage"]:has([data-testid="chatAvatarIcon-assistant"])
-    audio { display: none !important; }
-
-    /* LISA avatar — green ring */
-    [data-testid="chatAvatarIcon-assistant"] img {
-        border-radius: 50% !important;
-        border: 2px solid #10b981 !important;
-        box-shadow: 0 0 10px rgba(16,185,129,0.2) !important;
+    
+    /* HIGHLIGHT PROJECT NAMES (strong tags in assistant chat) */
+    [data-testid="stChatMessage"]:has(.chat-role-assistant) p strong {
+        color: var(--btn-send-bg) !important;
+        font-weight: 600 !important;
     }
 
-    /* ══════════════════════════════════════════
-       USER BUBBLE — right side
-    ══════════════════════════════════════════ */
-    [data-testid="stChatMessage"]:has([data-testid="chatAvatarIcon-user"])
-    [data-testid="stChatMessageContent"] {
-        background: #162032 !important;
-        border: 1px solid #1e3a5e !important;
-        border-radius: 14px 4px 14px 14px !important;
+    /* 2. USER MESSAGE BUBBLE (Right Aligned) */
+    [data-testid="stChatMessage"]:has(.chat-role-user) {
+        flex-direction: row-reverse !important;
+    }
+    [data-testid="stChatMessage"]:has(.chat-role-user) [data-testid="stChatMessageContent"] {
+        background: var(--user-bubble-bg) !important;
+        border: 0.5px solid var(--user-bubble-border) !important;
+        border-radius: 12px 0 12px 12px !important;
         padding: 16px 20px !important;
-        max-width: 82% !important;
+        max-width: 85% !important;
         margin-left: auto !important;
         margin-right: 0 !important;
-        box-shadow: 0 2px 12px rgba(0,0,0,0.2) !important;
+        color: var(--user-bubble-text) !important;
+        text-align: left;
+        box-shadow: none !important;
     }
-    [data-testid="stChatMessage"]:has([data-testid="chatAvatarIcon-user"])
-    [data-testid="stChatMessageContent"],
-    [data-testid="stChatMessage"]:has([data-testid="chatAvatarIcon-user"])
-    [data-testid="stChatMessageContent"] * {
-        color: #dbeafe !important;
-        font-size: 14px !important;
-        line-height: 1.7 !important;
-        background: transparent !important;
+    [data-testid="stChatMessage"]:has(.chat-role-user) p {
+        color: var(--user-bubble-text) !important;
     }
 
-    /* ══════════════════════════════════════════
-       CAPTIONS / TIMESTAMPS
-    ══════════════════════════════════════════ */
-    .stChatMessage small,
-    .stChatMessage [data-testid="stCaptionContainer"] p {
-        color: #475569 !important;
-        font-size: 10px !important;
-    }
-
-    /* ══════════════════════════════════════════
-       MIC / AUDIO INPUT
-    ══════════════════════════════════════════ */
-    [data-testid="stAudioInput"] {
-        background: #1a1f2e !important;
-        border: 1px solid #2d3548 !important;
-        border-radius: 12px !important;
-        padding: 6px 14px !important;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.3) !important;
-        margin-bottom: 4px !important;
-        transition: border-color 0.2s !important;
-    }
-    [data-testid="stAudioInput"]:focus-within,
-    [data-testid="stAudioInput"]:hover {
-        border-color: #10b981 !important;
-        box-shadow: 0 0 0 2px rgba(16,185,129,0.1) !important;
-    }
-    [data-testid="stAudioInput"] button {
-        color: #10b981 !important;
+    /* AVATARS */
+    [data-testid="stChatMessageAvatarCustom"] {
         background: transparent !important;
     }
-    [data-testid="stAudioInput"] button svg {
-        filter: drop-shadow(0 0 4px rgba(16,185,129,0.4)) !important;
+    [data-testid="stChatMessage"]:has(.chat-role-assistant) [data-testid="stChatMessageAvatarCustom"] {
+        background: var(--ai-avatar-bg) !important;
+        border: 1px solid var(--ai-avatar-border) !important;
+        border-radius: 50% !important;
+        width: 32px !important;
+        height: 32px !important;
     }
-    [data-testid="stAudioInput"] > div {
-        background: transparent !important;
-        color: #475569 !important;
+    [data-testid="stChatMessage"]:has(.chat-role-user) [data-testid="stChatMessageAvatarCustom"] {
+        background: var(--user-avatar-bg) !important;
+        border: 1px solid var(--user-avatar-border) !important;
+        border-radius: 50% !important;
+        width: 32px !important;
+        height: 32px !important;
     }
 
-    /* ══════════════════════════════════════════
-       CHAT INPUT — dark bar at bottom, teal accents
-    ══════════════════════════════════════════ */
-    /* Kill all white from the bottom container */
-    [data-testid="stBottomBlockContainer"],
-    [data-testid="stBottomBlockContainer"] > div,
-    [data-testid="stBottomBlockContainer"] > div > div,
-    [data-testid="stChatInputContainer"],
-    [data-testid="stChatInputContainer"] > div {
-        background-color: #141824 !important;
+    /* INPUT BOX AND CHAT CONTAINER AREA */
+    [data-testid="stChatInputContainer"], [data-testid="stBottomBlockContainer"] {
+        background-color: var(--page-bg) !important;
         border: none !important;
         box-shadow: none !important;
     }
-
-    /* Input pill */
     [data-testid="stChatInput"] {
-        background-color: #1a1f2e !important;
-        border: 1px solid #2d3548 !important;
+        background-color: var(--input-bg) !important;
+        border: 0.5px solid var(--input-border) !important;
         border-radius: 12px !important;
-        padding: 8px 14px !important;
-        box-shadow: 0 2px 14px rgba(0,0,0,0.3) !important;
-        transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
     }
-    /* Teal glow on focus */
-    [data-testid="stChatInput"]:focus-within {
-        border-color: #10b981 !important;
-        box-shadow: 0 0 0 2px rgba(16,185,129,0.12),
-                    0 2px 14px rgba(0,0,0,0.3) !important;
+    [data-testid="stChatInput"] textarea {
+        background-color: var(--input-bg) !important;
+        color: var(--ai-bubble-text) !important;
     }
-
-    /* Textarea — dark bg, light text */
-    [data-testid="stChatInput"] textarea,
-    [data-testid="stChatInput"] textarea:focus {
-        background-color: #1a1f2e !important;
-        color: #f1f5f9 !important;
-        -webkit-text-fill-color: #f1f5f9 !important;
-        font-size: 14px !important;
-        font-weight: 400 !important;
-        line-height: 1.5 !important;
-        caret-color: #10b981 !important;
-        border: none !important;
-        outline: none !important;
-        box-shadow: none !important;
-    }
-    [data-testid="stChatInput"] textarea::placeholder {
-        color: #475569 !important;
-        -webkit-text-fill-color: #475569 !important;
-        opacity: 1 !important;
-    }
-
-    /* Send button — teal gradient matching reference */
-    [data-testid="stChatInput"] button {
-        background: linear-gradient(135deg,#10b981,#059669) !important;
-        border: none !important;
-        border-radius: 8px !important;
-        color: #ffffff !important;
-        padding: 6px 14px !important;
-        transition: all 0.2s ease !important;
-        box-shadow: 0 2px 8px rgba(16,185,129,0.3) !important;
-    }
-    [data-testid="stChatInput"] button:hover {
-        background: linear-gradient(135deg,#34d399,#10b981) !important;
-        box-shadow: 0 0 16px rgba(16,185,129,0.4) !important;
-        transform: scale(1.05) !important;
-    }
-    /* Arrow icon — white */
-    [data-testid="stChatInput"] button svg {
-        color: #ffffff !important;
-        filter: drop-shadow(0 0 3px rgba(255,255,255,0.3)) !important;
-    }
-
-    /* ══════════════════════════════════════════
-       SCROLLABLE CHAT BOX (st.container with height)
-       — the contained chat area that scrolls internally
-    ══════════════════════════════════════════ */
-    /* The outer wrapper Streamlit creates for height-constrained containers */
-    [data-testid="stVerticalBlockBorderWrapper"]:has(> div > [data-testid="stVerticalBlock"]) {
-        background: #1a1f2e !important;
-        border: 1px solid #2d3548 !important;
-        border-radius: 14px !important;
-        box-shadow: 0 4px 24px rgba(0,0,0,0.3) !important;
-        overflow: hidden !important;
-    }
-    /* The scrollable inner div */
-    [data-testid="stVerticalBlockBorderWrapper"] > div {
-        background: #1a1f2e !important;
-    }
-    [data-testid="stVerticalBlockBorderWrapper"] > div::-webkit-scrollbar {
-        width: 5px;
-    }
-    [data-testid="stVerticalBlockBorderWrapper"] > div::-webkit-scrollbar-track {
-        background: #1a1f2e;
-    }
-    [data-testid="stVerticalBlockBorderWrapper"] > div::-webkit-scrollbar-thumb {
-        background: #2d3548;
-        border-radius: 4px;
-    }
-    [data-testid="stVerticalBlockBorderWrapper"] > div::-webkit-scrollbar-thumb:hover {
-        background: #10b981;
-    }
-
-    /* ══════════════════════════════════════════
-       PAGE OVERFLOW — prevent page-level scroll
-    ══════════════════════════════════════════ */
-    [data-testid="stAppViewContainer"],
-    section.main {
-        overflow: hidden !important;
-    }
-    .main .block-container {
-        overflow: visible !important;
-    }
-
+    
+    /* SCROLLBARS */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #2d3548; border-radius: 4px; }
     </style>
     """, unsafe_allow_html=True)

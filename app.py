@@ -5,6 +5,9 @@ import time
 from urllib.parse import unquote
 import os
 
+os.environ["OPENBLAS_NUM_THREADS"] = "1"
+os.environ["OMP_NUM_THREADS"] = "1"
+
 # From config.py
 from config import BACKEND_URL
 
@@ -115,7 +118,7 @@ if "initialized" not in st.session_state:
     # Enhance system prompt to sound more like a Senior Authority
     if st.session_state.conversation_history and st.session_state.conversation_history[0].get("role") == "system":
         if "Senior Authority" not in st.session_state.conversation_history[0]["content"]:
-            st.session_state.conversation_history[0]["content"] += " You are a Senior Authority and Expert in this domain. Conduct the interview as a highly experienced industry veteran. Be highly professional, realistic, and evaluate the candidate strictly but constructively. Ask only one question at a time and wait for the user to answer."
+            st.session_state.conversation_history[0]["content"] += " You are a Senior Authority and Expert in this domain. Conduct the interview as a highly experienced industry veteran. Be highly professional, realistic, and evaluate the candidate strictly but constructively. Ask only one question at a time and wait for the user to answer. NEVER provide the correct answer or solution to the user, even if they answer incorrectly or ask for it. Only evaluate silently and ask the next question."
         
     st.session_state.current_question_number = 1
     st.session_state.interview_active = True
@@ -148,13 +151,29 @@ if st.session_state.get("interview_complete", False):
         st.session_state.interview_active = False
         _call_end_interview()
 
+# Add Dark Mode Toggle
+col_t1, col_t2 = st.columns([8, 2])
+with col_t2:
+    is_dark = st.toggle("🌙 Dark Mode", value=True)
+
 # Call styles
-inject_interview_styles()
+inject_interview_styles(is_dark)
+
+
+
 
 # TIMER CALCULATION
 elapsed = int(time.time() - st.session_state.start_time)
 remaining = max(st.session_state.duration_minutes * 60 - elapsed, 0)
 mins, secs = divmod(remaining, 60)
+
+# Extract user's first name from greeting
+user_first_name = "User"
+if st.session_state.ai_greeting and "Hello " in st.session_state.ai_greeting:
+    try:
+        user_first_name = st.session_state.ai_greeting.split("Hello ")[1].split("!")[0]
+    except:
+        pass
 
 # Parse role from system prompt for header title
 role_title = "AI Interview"
@@ -170,34 +189,45 @@ render_interview_header(
     total_q=st.session_state.total_questions,
     level="medium",
     timer_str=f"{mins:02d}:{secs:02d}",
-    remaining=remaining
-)
-
-# PROGRESS BAR
-st.progress(
-    (st.session_state.current_question_number - 1) / st.session_state.total_questions,
-    text=f"Question {st.session_state.current_question_number} of {st.session_state.total_questions}"
+    remaining=remaining,
+    user_name=user_first_name
 )
 
 # CHAT MESSAGES
 for i, msg in enumerate(st.session_state.messages):
-    avatar = "assets/lisa_avatar.png" if msg["role"] == "assistant" else "👤"
-    with st.chat_message(msg["role"], avatar=avatar):
-        if i == len(st.session_state.messages) - 1 and msg["role"] == "assistant" and st.session_state.get("animate_last", False):
+    is_assistant = msg["role"] == "assistant"
+    role_str = "assistant" if is_assistant else "user"
+    avatar = "assets/lisa_avatar.png" if is_assistant else "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
+    
+    with st.chat_message(role_str, avatar=avatar):
+        # Inject hidden span for CSS targeting
+        st.markdown(f'<span class="chat-role-{role_str}"></span>', unsafe_allow_html=True)
+        
+        if i == len(st.session_state.messages) - 1 and is_assistant and st.session_state.get("animate_last", False):
             # Play audio immediately before streaming text so they sync up
             if st.session_state.get("audio_to_play"):
                 speak(st.session_state.audio_to_play)
                 st.session_state.audio_to_play = None
 
+            # Apply bold to highlight project names
+            import re
+            content = msg["content"]
+            content = re.sub(r'(worked on )(.*?)( — )', r'\1**\2**\3', content)
+
             def stream_data():
                 import time
-                for word in msg["content"].split():
+                for word in content.split():
                     yield word + " "
                     time.sleep(0.04)
             st.write_stream(stream_data)
             st.session_state.animate_last = False
         else:
-            st.write(msg["content"])
+            # Apply bold for past messages too
+            import re
+            content = msg["content"]
+            if is_assistant:
+                content = re.sub(r'(worked on )(.*?)( — )', r'\1**\2**\3', content)
+            st.write(content)
 
 # INPUT AREA (only if interview_active is True)
 if st.session_state.interview_active:
@@ -260,7 +290,8 @@ if st.session_state.interview_active:
         if not is_skipped:
             st.session_state.messages.append({"role": "user", "content": answer_text})
             # Render user message immediately
-            with st.chat_message("user", avatar="👤"):
+            with st.chat_message("user", avatar="https://cdn-icons-png.flaticon.com/512/3135/3135715.png"):
+                st.markdown('<span class="chat-role-user"></span>', unsafe_allow_html=True)
                 st.write(answer_text)
 
         with st.spinner("LISA is thinking..."):
@@ -309,10 +340,8 @@ if st.session_state.interview_active:
         st.rerun()
 
 # STEP 5: AUTO-END ON TIMER
-if remaining <= 0 and st.session_state.interview_active:
-    st.session_state.interview_active = False
-    _call_end_interview()
-    st.rerun()
+# (Removed to allow interview to continue beyond the time limit)
+# The timer now serves as a visual indicator only.
 
 # STEP 7: INTERVIEW COMPLETE SCREEN
 if not st.session_state.interview_active:
