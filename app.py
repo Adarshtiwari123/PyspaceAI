@@ -255,24 +255,27 @@ if st.session_state.interview_active:
                 st.session_state.answer_input = transcribed_text
                 st.session_state.last_audio_bytes = audio_bytes
 
-    # Record answer above the input box (make it small)
-    col_rec, _ = st.columns([3, 7])
-    with col_rec:
-        st.audio_input("Record Answer", key="voice_mic", label_visibility="collapsed")
+    # Fixed Bottom Input Container
+    with st.container():
+        st.markdown('<div class="fixed-bottom-input"></div>', unsafe_allow_html=True)
         
-    # Input box and buttons below
-    col_input, col_actions = st.columns([8, 2])
-    with col_input:
-        st.text_area(
-            "Type your answer or use voice...", 
-            key="answer_input",
-            label_visibility="collapsed",
-            height=100
-        )
+        # 3 columns: Mic, Input Box, Buttons
+        col_mic, col_input, col_actions = st.columns([2, 7, 1.5])
         
-    with col_actions:
-        st.button("Send", type="primary", on_click=on_send, key="btn_send", use_container_width=True)
-        st.button("⏭️ Skip", on_click=on_skip, key="btn_skip", use_container_width=True)
+        with col_mic:
+            st.audio_input("Record", key="voice_mic", label_visibility="collapsed")
+            
+        with col_input:
+            st.text_area(
+                "Type your answer or use voice...", 
+                key="answer_input",
+                label_visibility="collapsed",
+                height=100
+            )
+            
+        with col_actions:
+            st.button("Send", type="primary", on_click=on_send, key="btn_send", use_container_width=True)
+            st.button("Skip", on_click=on_skip, key="btn_skip", use_container_width=True)
 
     # STEP 4: HANDLE ANSWER SUBMISSION
     send_clicked = st.session_state.get("submit_clicked", False)

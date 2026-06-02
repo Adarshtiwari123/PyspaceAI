@@ -422,6 +422,30 @@ def inject_interview_styles(is_dark: bool = True):
     }
 
     /* INPUT BOX AND CHAT CONTAINER AREA */
+    [data-testid="stVerticalBlock"]:has(.fixed-bottom-input) {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background-color: var(--page-bg);
+        z-index: 999;
+        padding: 10px 40px 20px 40px !important;
+        border-top: 1px solid var(--input-border);
+        box-shadow: 0 -4px 10px rgba(0,0,0,0.05);
+    }
+    
+    /* Ensure the main chat window doesn't hide behind the fixed bottom bar */
+    .main .block-container {
+        padding-bottom: 120px !important;
+    }
+    
+    /* Make st.audio_input look like a circular button */
+    [data-testid="stAudioInput"] {
+        margin-top: -10px;
+        transform: scale(0.85);
+        transform-origin: center;
+    }
+
     [data-testid="stChatInputContainer"], [data-testid="stBottomBlockContainer"] {
         background-color: var(--page-bg) !important;
         border: none !important;

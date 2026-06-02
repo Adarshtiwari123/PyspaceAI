@@ -48,6 +48,8 @@ def transcribe_audio_debug(
         else:
             if isinstance(audio_input, str):
                 raw = audio_input.encode("utf-8")
+            elif isinstance(audio_input, dict):
+                raw = audio_input.get("bytes") or audio_input.get("data") or b""
             else:
                 raw = bytes(audio_input)
     except Exception as e:
