@@ -68,7 +68,9 @@ def render_interview_header(title: str, q_num: int, total_q: int,
         with c1:
             st.markdown(f"""
                <div class="header-profile">
-                   <div class="avatar-circle-main">💼</div>
+                   <div class="avatar-circle-main">
+                       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
+                   </div>
                    <div class="profile-info">
                        <div class="job-title">{title}</div>
                        <div class="sub-info">
@@ -145,9 +147,9 @@ def render_interview_header(title: str, q_num: int, total_q: int,
         # FOOTER ROW
         st.markdown("""
         <div class="header-footer-row">
-           <span>🎤 Voice active</span>
-           <span>📄 Resume loaded</span>
-           <span>📊 Score tracked</span>
+           <span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg> Voice active</span>
+           <span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg> Resume loaded</span>
+           <span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg> Score tracked</span>
         </div>
         """, unsafe_allow_html=True)
 
@@ -155,79 +157,81 @@ def inject_interview_styles(is_dark: bool = True):
     if is_dark:
         theme_css = """
         :root {
-          --page-bg: #0f1117;
-          --header-bg: #161922;
-          --chat-bg: #0f1117;
-          --ai-bubble-bg: #161f1c;
+          --page-bg: #1e1e24;
+          --header-bg: #1e1e24;
+          --chat-bg: #1e1e24;
+          --ai-bubble-bg: #162420;
           --ai-bubble-border: #0F6E56;
-          --ai-bubble-text: #c8ede4;
-          --user-bubble-bg: #1a1d2e;
-          --user-bubble-border: #2a2d3a;
-          --user-bubble-text: #b8bdd4;
-          --input-bg: #1e2130;
-          --input-border: #2a2d3a;
-          --btn-skip-border: #2a2d3a;
-          --btn-skip-text: #8b8fa8;
-          --btn-end-bg: #1a1d2e;
-          --btn-end-text: #2a2d3a;
-          --btn-end-border: #2a2d3a;
-          --prog-track: #1e2130;
-          --prog-fill: #1D9E75;
+          --ai-bubble-text: #e2e8f0;
+          --user-bubble-bg: #272838;
+          --user-bubble-border: #3f3f5a;
+          --user-bubble-text: #e2e8f0;
+          --input-bg: #1e1e24;
+          --input-border: #3f3f5a;
+          --btn-skip-border: #3f3f5a;
+          --btn-skip-text: #a0aec0;
+          --btn-end-bg: transparent;
+          --btn-end-text: #e53e3e;
+          --btn-end-border: #e53e3e;
+          --prog-track: #2d3748;
+          --prog-fill: #38b2ac;
           --ai-avatar-bg: #0F6E56;
           --ai-avatar-border: transparent;
           --ai-avatar-icon: #9FE1CB;
-          --user-avatar-bg: #1e2130;
-          --user-avatar-border: #2a2d3a;
-          --user-avatar-icon: #8b8fa8;
-          --diff-bg: #2a1f0e;
-          --diff-text: #EF9F27;
+          --user-avatar-bg: #272838;
+          --user-avatar-border: #3f3f5a;
+          --user-avatar-icon: #a0aec0;
+          --diff-bg: #4c3a10;
+          --diff-text: #f6e05e;
           --timer-bg: transparent;
-          --timer-border: transparent;
-          --timer-text: #00ff9d;
-          --btn-send-bg: #1D9E75;
+          --timer-border: #f6e05e;
+          --timer-text: #f6e05e;
+          --btn-send-bg: #38b2ac;
           --btn-send-text: #ffffff;
           --btn-skip-bg: transparent;
-          --header-text-muted: #8b8fa8;
+          --header-text-muted: #a0aec0;
           --header-text-main: #ffffff;
+          --border-color: #2d3748;
         }
         """
     else:
         theme_css = """
         :root {
-          --page-bg: #f4f6fa;
-          --header-bg: #ffffff;
-          --chat-bg: #f4f6fa;
+          --page-bg: #f8fafc;
+          --header-bg: #f8fafc;
+          --chat-bg: #f8fafc;
           --ai-bubble-bg: #ffffff;
-          --ai-bubble-border: #c0e8d8;
-          --ai-bubble-text: #2d3550;
-          --user-bubble-bg: #EEEDFE;
-          --user-bubble-border: #AFA9EC;
-          --user-bubble-text: #3C3489;
-          --input-bg: #f4f6fa;
-          --input-border: #dde1ec;
-          --btn-skip-border: #dde1ec;
-          --btn-skip-text: #8b8fa8;
-          --btn-end-bg: #f4f6fa;
-          --btn-end-text: #dde1ec;
-          --btn-end-border: #dde1ec;
-          --prog-track: #e8ecf5;
-          --prog-fill: #1D9E75;
-          --ai-avatar-bg: #E1F5EE;
-          --ai-avatar-border: #9FE1CB;
-          --ai-avatar-icon: #0F6E56;
-          --user-avatar-bg: #eef0f8;
-          --user-avatar-border: #dde1ec;
-          --user-avatar-icon: #534AB7;
-          --diff-bg: #fef3e2;
-          --diff-text: #854F0B;
-          --timer-bg: transparent;
-          --timer-border: transparent;
-          --timer-text: #1D9E75;
-          --btn-send-bg: #1D9E75;
+          --ai-bubble-border: #b2f5ea;
+          --ai-bubble-text: #1a202c;
+          --user-bubble-bg: #ebf4ff;
+          --user-bubble-border: #c3dafe;
+          --user-bubble-text: #2b6cb0;
+          --input-bg: #f8fafc;
+          --input-border: #e2e8f0;
+          --btn-skip-border: #e2e8f0;
+          --btn-skip-text: #718096;
+          --btn-end-bg: #fff5f5;
+          --btn-end-text: #e53e3e;
+          --btn-end-border: #feb2b2;
+          --prog-track: #e2e8f0;
+          --prog-fill: #38b2ac;
+          --ai-avatar-bg: #38b2ac;
+          --ai-avatar-border: transparent;
+          --ai-avatar-icon: #ffffff;
+          --user-avatar-bg: #ebf4ff;
+          --user-avatar-border: #c3dafe;
+          --user-avatar-icon: #2b6cb0;
+          --diff-bg: #fefcbf;
+          --diff-text: #744210;
+          --timer-bg: #fffff0;
+          --timer-border: #f6e05e;
+          --timer-text: #b7791f;
+          --btn-send-bg: #38b2ac;
           --btn-send-text: #ffffff;
           --btn-skip-bg: transparent;
-          --header-text-muted: #64748b;
-          --header-text-main: #0f172a;
+          --header-text-muted: #718096;
+          --header-text-main: #1a202c;
+          --border-color: #e2e8f0;
         }
         """
 
@@ -246,14 +250,11 @@ def inject_interview_styles(is_dark: bool = True):
     [data-testid="stProgressBar"] { display: none !important; }
     [data-testid="stMetric"] { display: none !important; }
 
-    /* ==================================================
-       HEADER STYLING (Image 3 exact replica)
-       ================================================== */
     /* Target the container wrapping the header */
     [data-testid="stVerticalBlock"]:has(.custom-header-target) {
         background-color: var(--header-bg) !important;
         border-radius: 12px;
-        border: 1px solid var(--input-border);
+        border: 1px solid var(--border-color);
         padding: 20px 24px !important;
         margin-bottom: 24px;
         box-shadow: 0 4px 20px rgba(0,0,0,0.1);
@@ -282,16 +283,16 @@ def inject_interview_styles(is_dark: bool = True):
         font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;
         color: var(--header-text-muted);
         margin-bottom: 24px;
-        border-bottom: 1px solid var(--input-border);
+        border-bottom: 1px solid var(--border-color);
         padding-bottom: 12px;
     }
     
-    .header-profile { display: flex; align-items: center; gap: 16px; }
+    .header-profile { display: flex; align-items: center; gap: 16px; margin-top: 0; margin-bottom: 0;}
     .avatar-circle-main {
         width: 48px; height: 48px; border-radius: 50%;
-        background-color: var(--btn-send-bg); color: white;
-        display: flex; align-items: center; justify-content: center; font-size: 24px;
-        border: 2px solid var(--header-bg); outline: 2px solid var(--btn-send-bg);
+        background-color: var(--ai-avatar-bg); color: var(--ai-avatar-icon);
+        display: flex; align-items: center; justify-content: center;
+        border: 2px solid var(--header-bg); outline: 2px solid var(--ai-avatar-bg);
     }
     .profile-info .job-title { font-size: 20px; font-weight: 600; color: var(--header-text-main); margin-bottom: 4px; }
     .profile-info .sub-info { font-size: 13px; color: var(--header-text-muted); display: flex; gap: 12px; align-items: center; }
@@ -299,15 +300,15 @@ def inject_interview_styles(is_dark: bool = True):
     .badge-amber { background: var(--diff-bg); color: var(--diff-text); padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; }
     .badge-green { background: transparent; color: #1D9E75; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; border: 1px solid #1D9E75; }
     
-    .header-timer { text-align: left; }
-    .timer-label { font-size: 11px; font-weight: 600; color: var(--header-text-muted); letter-spacing: 1px; margin-bottom: 4px; }
+    .header-timer { text-align: left; margin-top: 0; }
+    .timer-label { font-size: 11px; font-weight: 600; color: var(--header-text-muted); letter-spacing: 1px; margin-bottom: 4px; text-transform: uppercase; }
     .timer-value { font-size: 28px; font-weight: 600; color: var(--timer-text); font-family: monospace; letter-spacing: 2px; line-height: 1; }
     
-    .candidate-info { border-left: 1px solid var(--input-border); padding-left: 20px; text-align: left; }
+    .candidate-info { border-left: 1px solid var(--border-color); padding-left: 20px; text-align: left; }
     .candidate-name { font-size: 16px; font-weight: 600; color: var(--header-text-main); }
     .candidate-role { font-size: 13px; color: var(--header-text-muted); }
     
-    .header-progress-row { margin-top: 24px; }
+    .header-progress-row { margin-top: 24px; border-top: none; padding-top: 0; padding-bottom: 0; }
     .progress-labels-row { display: flex; justify-content: space-between; margin-bottom: 8px; align-items: center; }
     .progress-title { font-size: 13px; color: var(--header-text-muted); }
     .progress-dots { display: flex; gap: 6px; }
@@ -322,7 +323,7 @@ def inject_interview_styles(is_dark: bool = True):
     
     .header-footer-row {
         display: flex; gap: 24px; font-size: 12px; color: var(--header-text-muted);
-        margin-top: 20px; padding-top: 12px; border-top: 1px solid var(--input-border);
+        margin-top: 20px; padding-top: 12px; border-top: 1px solid var(--border-color);
     }
 
     /* BUTTONS */
@@ -403,22 +404,33 @@ def inject_interview_styles(is_dark: bool = True):
     }
 
     /* AVATARS */
-    [data-testid="stChatMessageAvatarCustom"] {
-        background: transparent !important;
-    }
-    [data-testid="stChatMessage"]:has(.chat-role-assistant) [data-testid="stChatMessageAvatarCustom"] {
+    [data-testid="stChatMessageAvatarAssistant"] {
         background: var(--ai-avatar-bg) !important;
         border: 1px solid var(--ai-avatar-border) !important;
         border-radius: 50% !important;
-        width: 32px !important;
-        height: 32px !important;
+        width: 36px !important;
+        height: 36px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
     }
-    [data-testid="stChatMessage"]:has(.chat-role-user) [data-testid="stChatMessageAvatarCustom"] {
+    [data-testid="stChatMessageAvatarAssistant"] svg {
+        fill: var(--ai-avatar-icon) !important;
+        color: var(--ai-avatar-icon) !important;
+    }
+    [data-testid="stChatMessageAvatarUser"] {
         background: var(--user-avatar-bg) !important;
         border: 1px solid var(--user-avatar-border) !important;
         border-radius: 50% !important;
-        width: 32px !important;
-        height: 32px !important;
+        width: 36px !important;
+        height: 36px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+    [data-testid="stChatMessageAvatarUser"] svg {
+        fill: var(--user-avatar-icon) !important;
+        color: var(--user-avatar-icon) !important;
     }
 
     /* INPUT BOX AND CHAT CONTAINER AREA */

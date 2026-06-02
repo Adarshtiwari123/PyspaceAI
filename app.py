@@ -197,9 +197,8 @@ render_interview_header(
 for i, msg in enumerate(st.session_state.messages):
     is_assistant = msg["role"] == "assistant"
     role_str = "assistant" if is_assistant else "user"
-    avatar = "assets/lisa_avatar.png" if is_assistant else "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
     
-    with st.chat_message(role_str, avatar=avatar):
+    with st.chat_message(role_str, avatar=None):
         # Inject hidden span for CSS targeting
         st.markdown(f'<span class="chat-role-{role_str}"></span>', unsafe_allow_html=True)
         
@@ -293,7 +292,7 @@ if st.session_state.interview_active:
         if not is_skipped:
             st.session_state.messages.append({"role": "user", "content": answer_text})
             # Render user message immediately
-            with st.chat_message("user", avatar="https://cdn-icons-png.flaticon.com/512/3135/3135715.png"):
+            with st.chat_message("user", avatar=None):
                 st.markdown('<span class="chat-role-user"></span>', unsafe_allow_html=True)
                 st.write(answer_text)
 
