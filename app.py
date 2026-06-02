@@ -270,7 +270,7 @@ if st.session_state.interview_active:
                 "Type your answer or use voice...", 
                 key="answer_input",
                 label_visibility="collapsed",
-                height=100
+                height=68
             )
             
         with col_actions:

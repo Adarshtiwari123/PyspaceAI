@@ -425,13 +425,14 @@ def inject_interview_styles(is_dark: bool = True):
     [data-testid="stVerticalBlock"]:has(.fixed-bottom-input) {
         position: fixed;
         bottom: 0;
-        left: 0;
-        right: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 100%;
+        max-width: 46rem; /* Match Streamlit's default center column width closely */
         background-color: var(--page-bg);
         z-index: 999;
-        padding: 10px 40px 20px 40px !important;
-        border-top: 1px solid var(--input-border);
-        box-shadow: 0 -4px 10px rgba(0,0,0,0.05);
+        padding: 10px 0px 20px 0px !important;
+        /* Removed border and shadow for a cleaner floating look */
     }
     
     /* Ensure the main chat window doesn't hide behind the fixed bottom bar */
@@ -439,11 +440,11 @@ def inject_interview_styles(is_dark: bool = True):
         padding-bottom: 120px !important;
     }
     
-    /* Make st.audio_input look like a circular button */
+    /* Make st.audio_input smaller and sleeker */
     [data-testid="stAudioInput"] {
-        margin-top: -10px;
-        transform: scale(0.85);
-        transform-origin: center;
+        margin-top: 5px;
+        transform: scale(0.9);
+        transform-origin: left center;
     }
 
     [data-testid="stChatInputContainer"], [data-testid="stBottomBlockContainer"] {
