@@ -22,7 +22,7 @@ from utils.text_to_speech import speak
 st.set_page_config(
     page_title="Interview Chat",
     page_icon="⏱️",
-    layout="centered"
+    layout="wide"
 )
 
 # STEP 1: READ URL PARAMS

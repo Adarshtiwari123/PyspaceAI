@@ -439,12 +439,12 @@ def inject_interview_styles(is_dark: bool = True):
         bottom: 0 !important;
         left: 0 !important;
         right: 0 !important;
-        margin: 0 auto !important;
+        margin: 0 !important;
         width: 100% !important;
-        max-width: 46rem !important; /* Match Streamlit's default center column width closely */
+        max-width: 100% !important;
         background-color: var(--page-bg) !important;
         z-index: 9999 !important;
-        padding: 10px 0px 20px 0px !important;
+        padding: 10px 5rem 20px 5rem !important; /* Align with Streamlit's wide mode padding */
     }
     
     /* Ensure the main chat window doesn't hide behind the fixed bottom bar */
