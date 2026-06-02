@@ -435,16 +435,16 @@ def inject_interview_styles(is_dark: bool = True):
 
     /* INPUT BOX AND CHAT CONTAINER AREA */
     [data-testid="stVerticalBlock"]:has(.fixed-bottom-input) {
-        position: fixed;
-        bottom: 0;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 100%;
-        max-width: 46rem; /* Match Streamlit's default center column width closely */
-        background-color: var(--page-bg);
-        z-index: 999;
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        margin: 0 auto !important;
+        width: 100% !important;
+        max-width: 46rem !important; /* Match Streamlit's default center column width closely */
+        background-color: var(--page-bg) !important;
+        z-index: 9999 !important;
         padding: 10px 0px 20px 0px !important;
-        /* Removed border and shadow for a cleaner floating look */
     }
     
     /* Ensure the main chat window doesn't hide behind the fixed bottom bar */
