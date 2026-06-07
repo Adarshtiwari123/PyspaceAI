@@ -33,9 +33,25 @@ if "url_params" not in st.session_state:
 
 params = st.session_state.url_params
 
-token = params.get("token")
+import base64
+
 session_id = params.get("session_id")
-userid = params.get("userid", "0")
+token = None
+userid = "0"
+
+if session_id:
+    try:
+        # Extract the payload part of the JWT (header.payload.signature)
+        payload_b64 = session_id.split(".")[1]
+        # Add padding if necessary
+        payload_b64 += "=" * ((4 - len(payload_b64) % 4) % 4)
+        payload_json = base64.urlsafe_b64decode(payload_b64).decode("utf-8")
+        payload = json.loads(payload_json)
+        
+        token = payload.get("token")
+        userid = str(payload.get("userid", "0"))
+    except Exception as e:
+        pass
 
 if not token or not session_id:
     st.error("Please start your interview from the portal.")
