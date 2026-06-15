@@ -35,25 +35,30 @@ params = st.session_state.url_params
 
 import base64
 
-session_id = params.get("session_id")
+session_id_param = params.get("session_id")
 token = None
 userid = "0"
+duration = 15
+total_questions = 5
 
-if session_id:
+if session_id_param:
     try:
         # Extract the payload part of the JWT (header.payload.signature)
-        payload_b64 = session_id.split(".")[1]
-        # Add padding if necessary
-        payload_b64 += "=" * ((4 - len(payload_b64) % 4) % 4)
-        payload_json = base64.urlsafe_b64decode(payload_b64).decode("utf-8")
-        payload = json.loads(payload_json)
-        
-        token = payload.get("token")
-        userid = str(payload.get("userid", "0"))
+        if "." in session_id_param:
+            payload_b64 = session_id_param.split(".")[1]
+            # Add padding if necessary
+            payload_b64 += "=" * ((4 - len(payload_b64) % 4) % 4)
+            payload_json = base64.urlsafe_b64decode(payload_b64).decode("utf-8")
+            payload = json.loads(payload_json)
+            
+            token = payload.get("token")
+            userid = str(payload.get("userid", "0"))
+            duration = payload.get("duration", 15)
+            total_questions = payload.get("total_questions", 5)
     except Exception as e:
         pass
 
-if not token or not session_id:
+if not token or not session_id_param:
     st.error("Please start your interview from the portal.")
     st.markdown("[← Go to Portal](https://interviewflow-suite-one.vercel.app)")
     st.stop()
@@ -61,7 +66,7 @@ if not token or not session_id:
 # 1. Call backend to verify session is valid
 session_ended = False
 try:
-    verify_url = f"{BACKEND_URL}/interview/verify-session?session_id={session_id}&userid={userid}"
+    verify_url = f"{BACKEND_URL}/interview/verify-session?session_id={session_id_param}&userid={userid}"
     verify_res = requests.get(verify_url, headers={"Authorization": f"Bearer {token}"}, timeout=60)
     
     try:
@@ -98,11 +103,11 @@ except Exception as e:
 # STEP 2: INITIALIZE SESSION STATE (only once)
 if "initialized" not in st.session_state:
     st.session_state.initialized = True
-    st.session_state.token = params.get("token")
-    st.session_state.session_id = params.get("session_id", "0")
-    st.session_state.userid = int(params.get("userid", 0))
-    st.session_state.duration_minutes = int(params.get("duration", 15))
-    st.session_state.total_questions = int(params.get("total_questions", 5))
+    st.session_state.token = token
+    st.session_state.session_id = session_id_param
+    st.session_state.userid = int(userid)
+    st.session_state.duration_minutes = int(duration)
+    st.session_state.total_questions = int(total_questions)
     
     # Fetch questions and greeting from backend instead of URL params
     try:
@@ -123,13 +128,13 @@ if "initialized" not in st.session_state:
             st.session_state.conversation_history = confirm_data.get("conversation_history", [])
         else:
             # Fallback to URL params if API fails
-            st.session_state.questions_list = json.loads(unquote(params.get("questions", "[]")))
-            st.session_state.ai_greeting = unquote(params.get("ai_greeting", "Hello!"))
-            st.session_state.conversation_history = json.loads(unquote(params.get("history", "[]")))
+            st.session_state.questions_list = []
+            st.session_state.ai_greeting = "Hello! I am your AI interviewer."
+            st.session_state.conversation_history = []
     except Exception as e:
-        st.session_state.questions_list = json.loads(unquote(params.get("questions", "[]")))
-        st.session_state.ai_greeting = unquote(params.get("ai_greeting", "Hello!"))
-        st.session_state.conversation_history = json.loads(unquote(params.get("history", "[]")))
+        st.session_state.questions_list = []
+        st.session_state.ai_greeting = "Hello! I am your AI interviewer."
+        st.session_state.conversation_history = []
 
     # Enhance system prompt to sound more like a Senior Authority
     if st.session_state.conversation_history and st.session_state.conversation_history[0].get("role") == "system":
