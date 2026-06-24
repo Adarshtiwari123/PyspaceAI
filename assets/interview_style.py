@@ -42,12 +42,13 @@ def show_typing_indicator():
 def render_interview_header(title: str, q_num: int, total_q: int,
                             level: str, timer_str: str, remaining: int, user_name: str):
     
-    progress_pct = (q_num / total_q) * 100
+    display_q_num = min(q_num, total_q)
+    progress_pct = min((display_q_num / total_q) * 100, 100)
     
     # Segmented dots
     dots_html = ""
     for i in range(1, total_q + 1):
-        if i <= q_num:
+        if i <= display_q_num:
             dots_html += '<div class="seg active"></div>'
         else:
             dots_html += '<div class="seg"></div>'
@@ -135,7 +136,7 @@ def render_interview_header(title: str, q_num: int, total_q: int,
                </div>
            </div>
            <div class="progress-bar-container">
-               <span class="q-label">Q {q_num} of {total_q}</span>
+               <span class="q-label">Q {display_q_num} of {total_q}</span>
                <div class="progress-track-long">
                    <div class="progress-fill-long" style="width:{progress_pct}%"></div>
                </div>
