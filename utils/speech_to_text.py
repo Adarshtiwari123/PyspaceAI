@@ -63,9 +63,16 @@ def transcribe_audio_debug(
     try:
         # Deepgram expects raw binary audio in the body, with a generic content-type
         # You can specify exact mime if needed, but audio/webm is common for browser uploads.
+        # Extract mime type if available from Streamlit UploadedFile
+        mime_type = getattr(audio_input, "type", None)
+
         headers = {
             "Authorization": f"Token {api_key}"
         }
+        if mime_type:
+            headers["Content-Type"] = mime_type
+        else:
+            headers["Content-Type"] = "audio/wav" # Fallback guess if missing
         
         # Override language if passed
         url = STT_URL

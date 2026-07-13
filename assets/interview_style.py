@@ -40,7 +40,7 @@ def show_typing_indicator():
     """, unsafe_allow_html=True)
 
 def render_interview_header(title: str, q_num: int, total_q: int,
-                            level: str, timer_str: str, remaining: int, user_name: str):
+                            level: str, timer_str: str, remaining: int, user_name: str, on_end_callback=None):
     
     display_q_num = min(q_num, total_q)
     progress_pct = min((display_q_num / total_q) * 100, 100)
@@ -97,7 +97,7 @@ def render_interview_header(title: str, q_num: int, total_q: int,
                </div>
             """, unsafe_allow_html=True)
         with c4:
-            st.button("End interview", key="end_btn_header", use_container_width=True)
+            st.button("End interview", key="end_btn_header", use_container_width=True, on_click=on_end_callback)
             
         # JS for Timer
         st.markdown(f"""
@@ -483,7 +483,13 @@ def inject_interview_styles(is_dark: bool = True):
         color: var(--ai-bubble-text) !important;
     }
     
-    [data-testid="stAudio"] { display: none !important; }
+    [data-testid="stAudio"] { 
+        width: 0px !important; 
+        height: 0px !important; 
+        opacity: 0.01 !important; 
+        position: absolute !important; 
+        pointer-events: none !important; 
+    }
     
     /* SCROLLBARS */
     ::-webkit-scrollbar { width: 4px; }

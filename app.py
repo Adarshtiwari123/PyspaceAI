@@ -214,11 +214,15 @@ def _call_end_interview():
         )
     except:
         pass
-# Handle manual end
-if st.session_state.get("interview_complete", False) or st.session_state.get("end_btn_header", False):
-    if st.session_state.interview_active:
+def handle_manual_end():
+    st.session_state.interview_complete = True
+    if st.session_state.get("interview_active", True):
         st.session_state.interview_active = False
         _call_end_interview()
+
+# Handle manual end triggered by state
+if st.session_state.get("interview_complete", False) or st.session_state.get("end_btn_header", False):
+    handle_manual_end()
 
 # Add Dark Mode Toggle
 col_t1, col_t2 = st.columns([8, 2])
@@ -279,7 +283,8 @@ render_interview_header(
     level=difficulty_level,
     timer_str=f"{mins:02d}:{secs:02d}",
     remaining=remaining,
-    user_name=user_first_name
+    user_name=user_first_name,
+    on_end_callback=handle_manual_end
 )
 
 # CHAT MESSAGES
@@ -422,6 +427,7 @@ if st.session_state.interview_active:
                     
                     if data.get("interview_complete") or st.session_state.current_question_number > st.session_state.total_questions:
                         st.session_state.pending_end_interview = True
+                        st.session_state.interview_active = False
                 else:
                     st.error(f"API Error: {res.status_code} - {res.text}")
                     if not is_skipped:
@@ -450,7 +456,7 @@ if not st.session_state.interview_active:
             for attempt in range(2):
                 try:
                     report_url = f"{BACKEND_URL}/api/interview/generate-report?session_id={st.session_state.session_id}&userid={st.session_state.userid}"
-                    report_res = requests.get(report_url, timeout=90)
+                    report_res = requests.get(report_url, headers={"Authorization": f"Bearer {st.session_state.token}"}, timeout=90)
                     if report_res.status_code == 200:
                         st.download_button(
                             label="📄 Download Detailed PDF Report",
