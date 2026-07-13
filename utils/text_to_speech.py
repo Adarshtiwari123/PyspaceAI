@@ -82,16 +82,7 @@ def _deepgram_tts(text: str, api_key: str) -> bytes | None:
 
 def _play_audio(audio_bytes: bytes) -> None:
     """Inject an autoplay HTML5 audio player into the Streamlit page."""
-    b64 = base64.b64encode(audio_bytes).decode()
-    components.html(
-        f"""
-        <audio autoplay style="display:none;">
-            <source src="data:audio/mp3;base64,{b64}" type="audio/mpeg">
-        </audio>
-        """,
-        height=1,
-        scrolling=False,
-    )
+    st.audio(audio_bytes, format="audio/mp3", autoplay=True)
 
 
 def _browser_speak(text: str) -> None:

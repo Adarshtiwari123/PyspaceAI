@@ -483,6 +483,8 @@ def inject_interview_styles(is_dark: bool = True):
         color: var(--ai-bubble-text) !important;
     }
     
+    [data-testid="stAudio"] { display: none !important; }
+    
     /* SCROLLBARS */
     ::-webkit-scrollbar { width: 4px; }
     ::-webkit-scrollbar-track { background: transparent; }

@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 
 import streamlit as st
 
-STT_URL = "https://api.deepgram.com/v1/listen?model=nova-3&language=en-IN"
+STT_URL = "https://api.deepgram.com/v1/listen?model=nova-2&language=en-IN"
 
 DEFAULT_LANGUAGE = "en-IN"
 
@@ -64,14 +64,13 @@ def transcribe_audio_debug(
         # Deepgram expects raw binary audio in the body, with a generic content-type
         # You can specify exact mime if needed, but audio/webm is common for browser uploads.
         headers = {
-            "Authorization": f"Token {api_key}",
-            "Content-Type": "audio/webm" 
+            "Authorization": f"Token {api_key}"
         }
         
         # Override language if passed
         url = STT_URL
         if language and language != "unknown":
-            url = f"https://api.deepgram.com/v1/listen?model=nova-3&language={language}"
+            url = f"https://api.deepgram.com/v1/listen?model=nova-2&language={language}"
 
         resp = requests.post(url, headers=headers, data=raw, timeout=30)
         resp.raise_for_status()

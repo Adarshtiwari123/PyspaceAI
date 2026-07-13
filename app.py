@@ -215,7 +215,7 @@ def _call_end_interview():
     except:
         pass
 # Handle manual end
-if st.session_state.get("interview_complete", False):
+if st.session_state.get("interview_complete", False) or st.session_state.get("end_btn_header", False):
     if st.session_state.interview_active:
         st.session_state.interview_active = False
         _call_end_interview()
@@ -303,10 +303,8 @@ for i, msg in enumerate(st.session_state.messages):
             content = re.sub(r'(worked on )(.*?)( — )', r'\1**\2**\3', content)
 
             def stream_data():
-                import time
                 for word in content.split():
                     yield word + " "
-                    time.sleep(0.04)
             st.write_stream(stream_data)
             st.session_state.animate_last = False
             
